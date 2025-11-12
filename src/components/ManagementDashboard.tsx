@@ -1,16 +1,14 @@
-import { Table, Order } from '../App';
+import { Table, Order, Role } from '../App';
 import { Button } from './ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from './ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from './ui/tabs';
 import { 
-  BarChart3, 
+  LogOut,
   DollarSign, 
   TrendingUp, 
   Users, 
   ShoppingBag, 
-  ArrowLeft,
   Calendar,
-  Clock,
   Package,
   Settings,
   UserCog,
@@ -27,7 +25,7 @@ interface ManagementDashboardProps {
   orders: Order[];
   onLogout: () => void;
   onNavigate: (screen: any) => void;
-  userRole: 'waitstaff' | 'kitchen' | 'manager' | 'admin';
+  userRole: Role;
 }
 
 export default function ManagementDashboard({ tables, orders, onLogout, onNavigate, userRole }: ManagementDashboardProps) {
@@ -102,9 +100,9 @@ export default function ManagementDashboard({ tables, orders, onLogout, onNaviga
       <div className="bg-white border-b px-6 py-4">
         <div className="flex items-center justify-between max-w-7xl mx-auto">
           <div className="flex items-center gap-4">
-            <Button variant="ghost" onClick={onLogout}>
-              <ArrowLeft className="w-4 h-4 mr-2" />
-              Back
+            <Button variant="outline" onClick={onLogout}>
+              <LogOut className="w-4 h-4 mr-2" />
+              Sign Out
             </Button>
             <div>
               <h1>Management Dashboard</h1>

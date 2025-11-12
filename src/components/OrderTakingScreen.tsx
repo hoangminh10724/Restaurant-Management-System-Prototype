@@ -1,41 +1,36 @@
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { MenuItem, OrderItem, Order } from '../App';
 import { Button } from './ui/button';
 import { Card } from './ui/card';
 import { Badge } from './ui/badge';
-import { ArrowLeft, Plus, Minus, Trash2, Send } from 'lucide-react';
+import { Input } from './ui/input';
+import { ArrowLeft, Plus, Minus, Trash2, Send, Ban } from 'lucide-react';
 import ModifierPopup from './ModifierPopup';
 
 interface OrderTakingScreenProps {
   tableId: number;
-  existingOrder?: Order;
+  menuItems: MenuItem[];
+  existingOrder?: Order | null;
   onSubmit: (tableId: number, items: OrderItem[]) => void;
   onUpdate: (tableId: number, items: OrderItem[]) => void;
   onBack: () => void;
 }
 
-const menuItems: MenuItem[] = [
-  { id: 1, name: 'Caesar Salad', price: 12.99, category: 'Appetizers' },
-  { id: 2, name: 'Bruschetta', price: 9.99, category: 'Appetizers' },
-  { id: 3, name: 'Soup of the Day', price: 8.99, category: 'Appetizers' },
-  { id: 4, name: 'Beef Steak', price: 32.99, category: 'Main Courses', modifiers: ['Rare', 'Medium-Rare', 'Medium', 'Well-done'] },
-  { id: 5, name: 'Grilled Salmon', price: 28.99, category: 'Main Courses', modifiers: ['Rare', 'Medium', 'Well-done'] },
-  { id: 6, name: 'Pasta Carbonara', price: 18.99, category: 'Main Courses' },
-  { id: 7, name: 'Red Wine', price: 45.00, category: 'Drinks' },
-  { id: 8, name: 'Beer', price: 6.50, category: 'Drinks' },
-  { id: 9, name: 'Soft Drink', price: 3.50, category: 'Drinks' },
-  { id: 10, name: 'Coffee', price: 4.50, category: 'Drinks' },
-];
-
 const categories = ['Appetizers', 'Main Courses', 'Drinks'];
 
-export default function OrderTakingScreen({ tableId, existingOrder, onSubmit, onUpdate, onBack }: OrderTakingScreenProps) {
+export default function OrderTakingScreen({ tableId, menuItems, existingOrder, onSubmit, onUpdate, onBack }: OrderTakingScreenProps) {
   const [orderItems, setOrderItems] = useState<OrderItem[]>(existingOrder?.items || []);
   const [selectedCategory, setSelectedCategory] = useState('Appetizers');
   const [showModifierPopup, setShowModifierPopup] = useState(false);
   const [selectedMenuItem, setSelectedMenuItem] = useState<MenuItem | null>(null);
 
   const handleAddItem = (menuItem: MenuItem) => {
+    // 3a. Món đã hết:
+    if (!menuItem.isAvailable) {
+      // Although the button is disabled, this is a safeguard.
+      return; 
+    }
+
     if (menuItem.modifiers && menuItem.modifiers.length > 0) {
       setSelectedMenuItem(menuItem);
       setShowModifierPopup(true);
@@ -60,7 +55,7 @@ export default function OrderTakingScreen({ tableId, existingOrder, onSubmit, on
     } else {
       setOrderItems([
         ...orderItems,
-        { ...menuItem, quantity: 1, selectedModifier: modifier },
+        { ...menuItem, quantity: 1, selectedModifier: modifier, notes: '' },
       ]);
     }
   };
@@ -98,16 +93,27 @@ export default function OrderTakingScreen({ tableId, existingOrder, onSubmit, on
     setOrderItems(orderItems.filter((_, i) => i !== index));
   };
 
+  const handleNoteChange = (index: number, note: string) => {
+    setOrderItems(
+      orderItems.map((item, i) =>
+        i === index ? { ...item, notes: note } : item
+      )
+    );
+  };
+
   const calculateSubtotal = () => {
     return orderItems.reduce((sum, item) => sum + item.price * item.quantity, 0);
   };
 
   const handleSendToKitchen = () => {
+    if (orderItems.length === 0) return; // Safeguard
+
     if (existingOrder) {
       onUpdate(tableId, orderItems);
     } else {
       onSubmit(tableId, orderItems);
     }
+    onBack(); // Go back to dashboard after sending
   };
 
   const filteredMenuItems = menuItems.filter(item => item.category === selectedCategory);
@@ -115,16 +121,16 @@ export default function OrderTakingScreen({ tableId, existingOrder, onSubmit, on
   return (
     <div className="min-h-screen bg-neutral-50">
       {/* Header */}
-      <div className="bg-white border-b px-6 py-4">
+      <div className="bg-white border-b px-6 py-4 sticky top-0 z-10">
         <div className="flex items-center justify-between max-w-7xl mx-auto">
           <div className="flex items-center gap-4">
             <Button variant="ghost" onClick={onBack}>
               <ArrowLeft className="w-4 h-4 mr-2" />
-              Back
+              Quay lại
             </Button>
             <div>
-              <h1>Table {tableId}</h1>
-              <p className="text-neutral-500 mt-1">Take Order</p>
+              <h1>Bàn {tableId}</h1>
+              <p className="text-neutral-500 mt-1">Ghi order</p>
             </div>
           </div>
         </div>
@@ -132,14 +138,13 @@ export default function OrderTakingScreen({ tableId, existingOrder, onSubmit, on
 
       {/* Main Content */}
       <div className="max-w-7xl mx-auto px-6 py-6">
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 items-start">
           {/* Left Column - Menu */}
           <div className="space-y-4">
             <Card className="p-4">
-              <h2 className="mb-4">Menu</h2>
+              <h2 className="mb-4 text-xl font-semibold">Thực đơn</h2>
               
-              {/* Category Tabs */}
-              <div className="flex gap-2 mb-6">
+              <div className="flex gap-2 mb-6 border-b pb-4">
                 {categories.map(category => (
                   <Button
                     key={category}
@@ -151,23 +156,31 @@ export default function OrderTakingScreen({ tableId, existingOrder, onSubmit, on
                 ))}
               </div>
 
-              {/* Menu Items */}
-              <div className="space-y-3">
+              <div className="space-y-3 max-h-[60vh] overflow-y-auto pr-2">
                 {filteredMenuItems.map(item => (
                   <div
                     key={item.id}
-                    className="flex items-center justify-between p-4 border rounded-lg hover:bg-neutral-50 cursor-pointer"
+                    className={`flex items-center justify-between p-4 border rounded-lg transition-colors ${
+                      !item.isAvailable
+                        ? 'bg-neutral-100 cursor-not-allowed'
+                        : 'hover:bg-neutral-50 cursor-pointer'
+                    }`}
                     onClick={() => handleAddItem(item)}
                   >
                     <div className="flex-1">
-                      <h3>{item.name}</h3>
-                      {item.modifiers && (
-                        <p className="text-neutral-500 mt-1">Customizable</p>
+                      <h3 className={`${!item.isAvailable ? 'text-neutral-400' : ''}`}>{item.name}</h3>
+                      {item.isAvailable && item.modifiers && (
+                        <p className="text-sm text-neutral-500 mt-1">Tùy chỉnh</p>
+                      )}
+                      {!item.isAvailable && (
+                        <Badge variant="destructive" className="mt-1">Tạm hết</Badge>
                       )}
                     </div>
                     <div className="flex items-center gap-3">
-                      <span className="text-neutral-900">${item.price.toFixed(2)}</span>
-                      <Button size="sm">
+                      <span className={`font-semibold ${!item.isAvailable ? 'text-neutral-400' : 'text-neutral-900'}`}>
+                        ${item.price.toFixed(2)}
+                      </span>
+                      <Button size="sm" disabled={!item.isAvailable}>
                         <Plus className="w-4 h-4" />
                       </Button>
                     </div>
@@ -178,23 +191,23 @@ export default function OrderTakingScreen({ tableId, existingOrder, onSubmit, on
           </div>
 
           {/* Right Column - Order Summary */}
-          <div className="space-y-4">
-            <Card className="p-4 sticky top-6">
-              <h2 className="mb-4">Order Summary</h2>
+          <div className="space-y-4 sticky top-24">
+            <Card className="p-4">
+              <h2 className="mb-4 text-xl font-semibold">Chi tiết Order</h2>
 
               {orderItems.length === 0 ? (
                 <div className="text-center py-12 text-neutral-500">
-                  <p>No items added yet</p>
-                  <p className="mt-2">Select items from the menu to start the order</p>
+                  <p>Chưa có món nào</p>
+                  <p className="mt-2 text-sm">Chọn món từ thực đơn để bắt đầu</p>
                 </div>
               ) : (
                 <>
-                  <div className="space-y-3 mb-6 max-h-96 overflow-y-auto">
+                  <div className="space-y-3 mb-6 max-h-96 overflow-y-auto pr-2">
                     {orderItems.map((item, index) => (
-                      <div key={index} className="border rounded-lg p-3">
+                      <div key={index} className="border rounded-lg p-3 bg-white">
                         <div className="flex items-start justify-between mb-2">
                           <div className="flex-1">
-                            <h3>{item.name}</h3>
+                            <h3 className="font-semibold">{item.name}</h3>
                             {item.selectedModifier && (
                               <Badge variant="secondary" className="mt-1">
                                 {item.selectedModifier}
@@ -203,51 +216,52 @@ export default function OrderTakingScreen({ tableId, existingOrder, onSubmit, on
                           </div>
                           <Button
                             variant="ghost"
-                            size="sm"
+                            size="icon"
+                            className="w-8 h-8"
                             onClick={() => handleRemoveItem(index)}
                           >
                             <Trash2 className="w-4 h-4 text-red-500" />
                           </Button>
                         </div>
-                        <div className="flex items-center justify-between">
+                        <div className="flex items-center justify-between mb-2">
                           <div className="flex items-center gap-2">
-                            <Button
-                              size="sm"
-                              variant="outline"
-                              onClick={() => handleDecreaseQuantity(index)}
-                            >
+                            <Button size="sm" variant="outline" onClick={() => handleDecreaseQuantity(index)}>
                               <Minus className="w-3 h-3" />
                             </Button>
-                            <span className="w-8 text-center">{item.quantity}</span>
-                            <Button
-                              size="sm"
-                              variant="outline"
-                              onClick={() => handleIncreaseQuantity(index)}
-                            >
+                            <span className="w-8 text-center font-bold">{item.quantity}</span>
+                            <Button size="sm" variant="outline" onClick={() => handleIncreaseQuantity(index)}>
                               <Plus className="w-3 h-3" />
                             </Button>
                           </div>
-                          <span className="text-neutral-900">
+                          <span className="text-neutral-900 font-semibold">
                             ${(item.price * item.quantity).toFixed(2)}
                           </span>
                         </div>
+                        <Input
+                          type="text"
+                          placeholder="Thêm ghi chú..."
+                          value={item.notes}
+                          onChange={(e) => handleNoteChange(index, e.target.value)}
+                          className="mt-2"
+                        />
                       </div>
                     ))}
                   </div>
 
                   <div className="border-t pt-4 space-y-3">
-                    <div className="flex items-center justify-between">
-                      <span className="text-neutral-600">Subtotal</span>
-                      <span className="text-neutral-900">${calculateSubtotal().toFixed(2)}</span>
+                    <div className="flex items-center justify-between text-lg font-bold">
+                      <span>Tổng cộng</span>
+                      <span>${calculateSubtotal().toFixed(2)}</span>
                     </div>
                   </div>
 
                   <Button
-                    className="w-full mt-6"
+                    className="w-full mt-6 h-12 text-lg"
                     onClick={handleSendToKitchen}
+                    disabled={orderItems.length === 0}
                   >
-                    <Send className="w-4 h-4 mr-2" />
-                    Send to Kitchen
+                    <Send className="w-5 h-5 mr-2" />
+                    {existingOrder ? 'Cập nhật Order' : 'Gửi Order'}
                   </Button>
                 </>
               )}
@@ -256,7 +270,6 @@ export default function OrderTakingScreen({ tableId, existingOrder, onSubmit, on
         </div>
       </div>
 
-      {/* Modifier Popup */}
       {showModifierPopup && selectedMenuItem && (
         <ModifierPopup
           item={selectedMenuItem}

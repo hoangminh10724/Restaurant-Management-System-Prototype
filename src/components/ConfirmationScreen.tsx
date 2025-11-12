@@ -1,22 +1,15 @@
 import { Button } from './ui/button';
 import { Card } from './ui/card';
-import { CheckCircle, Printer, Mail } from 'lucide-react';
+import { CheckCircle, FileText } from 'lucide-react';
+import { BillDetails, Order, Customer } from '../App';
 
 interface ConfirmationScreenProps {
   onBackToDashboard: () => void;
+  onNavigateToInvoice: () => void;
+  lastCompletedTransaction: { order: Order; billDetails: BillDetails; customer?: Customer | null } | null;
 }
 
-export default function ConfirmationScreen({ onBackToDashboard }: ConfirmationScreenProps) {
-  const handlePrintReceipt = () => {
-    // Simulate printing
-    alert('Receipt sent to printer');
-  };
-
-  const handleSendEmail = () => {
-    // Simulate email sending
-    alert('E-receipt sent successfully');
-  };
-
+export default function ConfirmationScreen({ onBackToDashboard, onNavigateToInvoice, lastCompletedTransaction }: ConfirmationScreenProps) {
   return (
     <div className="min-h-screen bg-neutral-50 flex items-center justify-center p-4">
       <Card className="w-full max-w-md p-8 text-center">
@@ -24,32 +17,25 @@ export default function ConfirmationScreen({ onBackToDashboard }: ConfirmationSc
           <CheckCircle className="w-12 h-12 text-green-600" />
         </div>
         
-        <h1 className="mb-3">Payment Successful!</h1>
+        <h1 className="mb-3">Thanh toán thành công!</h1>
         <p className="text-neutral-500 mb-8">
-          The payment has been processed successfully.
+          Giao dịch đã được xử lý thành công.
         </p>
 
         <div className="space-y-3 mb-6">
           <Button
             variant="outline"
             className="w-full"
-            onClick={handlePrintReceipt}
+            onClick={onNavigateToInvoice}
+            disabled={!lastCompletedTransaction}
           >
-            <Printer className="w-4 h-4 mr-2" />
-            Print Receipt
-          </Button>
-          <Button
-            variant="outline"
-            className="w-full"
-            onClick={handleSendEmail}
-          >
-            <Mail className="w-4 h-4 mr-2" />
-            Send E-Receipt
+            <FileText className="w-4 h-4 mr-2" />
+            Xuất hóa đơn
           </Button>
         </div>
 
         <Button className="w-full" onClick={onBackToDashboard}>
-          Back to Dashboard
+          Quay lại Sơ đồ bàn
         </Button>
       </Card>
     </div>

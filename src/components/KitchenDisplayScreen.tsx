@@ -1,17 +1,17 @@
-import { Order } from '../App';
+import { Order, Role } from '../App';
 import { Button } from './ui/button';
 import { Card } from './ui/card';
 import { Badge } from './ui/badge';
-import { Clock, ArrowLeft, ChefHat } from 'lucide-react';
+import { Clock, LogOut, ChefHat } from 'lucide-react';
 
 interface KitchenDisplayScreenProps {
   orders: Order[];
   onStatusUpdate: (tableId: number, status: Order['status']) => void;
-  onNavigateToDashboard: () => void;
-  userRole: 'waitstaff' | 'kitchen';
+  onLogout: () => void;
+  userRole: Role;
 }
 
-export default function KitchenDisplayScreen({ orders, onStatusUpdate, onNavigateToDashboard, userRole }: KitchenDisplayScreenProps) {
+export default function KitchenDisplayScreen({ orders, onStatusUpdate, onLogout, userRole }: KitchenDisplayScreenProps) {
   const getStatusColor = (status: Order['status']) => {
     switch (status) {
       case 'pending':
@@ -38,60 +38,65 @@ export default function KitchenDisplayScreen({ orders, onStatusUpdate, onNavigat
     }
   };
 
+  const getOrderStatusInfo = (status: Order['status']) => {
+    switch (status) {
+      case 'pending':
+        return { text: 'Mới', variant: 'destructive' as const };
+      case 'cooking':
+        return { text: 'Đang làm', variant: 'default' as const };
+      case 'ready':
+        return { text: 'Sẵn sàng', variant: 'secondary' as const };
+      default:
+        return { text: 'Đã xong', variant: 'outline' as const };
+    }
+  };
+
   return (
     <div className="min-h-screen bg-neutral-50">
       {/* Header */}
       <div className="bg-white border-b px-6 py-4">
         <div className="flex items-center justify-between max-w-7xl mx-auto">
-          <div className="flex items-center gap-4">
-            {userRole === 'kitchen' && (
-              <Button variant="ghost" onClick={onNavigateToDashboard}>
-                <ArrowLeft className="w-4 h-4 mr-2" />
-                Dashboard
-              </Button>
-            )}
-            <div className="flex items-center gap-3">
-              <div className="w-12 h-12 bg-orange-500 rounded-full flex items-center justify-center">
-                <ChefHat className="w-6 h-6 text-white" />
-              </div>
-              <div>
-                <h1>Kitchen Display System</h1>
-                <p className="text-neutral-500 mt-1">Active Orders</p>
-              </div>
+          <div className="flex items-center gap-3">
+            <div className="w-12 h-12 bg-orange-500 rounded-full flex items-center justify-center">
+              <ChefHat className="w-6 h-6 text-white" />
+            </div>
+            <div>
+              <h1>Hệ thống hiển thị bếp</h1>
+              <p className="text-neutral-500 mt-1">Các order đang hoạt động cho {userRole}</p>
             </div>
           </div>
-          {userRole === 'waitstaff' && (
-            <Button variant="outline" onClick={onNavigateToDashboard}>
-              <ArrowLeft className="w-4 h-4 mr-2" />
-              Back to Dashboard
-            </Button>
-          )}
+          <Button variant="outline" onClick={onLogout}>
+            <LogOut className="w-4 h-4 mr-2" />
+            Đăng xuất
+          </Button>
         </div>
       </div>
 
       {/* Orders Grid */}
       <div className="max-w-7xl mx-auto px-6 py-6">
-        {orders.length === 0 ? (
+        {orders.filter(o => o.status !== 'completed').length === 0 ? (
           <Card className="p-12 text-center">
-            <p className="text-neutral-500">No active orders</p>
+            <p className="text-neutral-500">Không có order nào đang hoạt động</p>
           </Card>
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-            {orders.map((order) => (
+            {orders.filter(o => o.status !== 'completed').map((order) => {
+              const orderStatus = getOrderStatusInfo(order.status);
+              return (
               <Card
                 key={order.tableId}
                 className={`${getStatusColor(order.status)} border-2 p-4`}
               >
                 <div className="flex items-start justify-between mb-4">
                   <div>
-                    <h2>Table {order.tableId}</h2>
+                    <h2>Bàn {order.tableId}</h2>
                     <div className="flex items-center gap-2 text-neutral-600 mt-1">
                       <Clock className="w-4 h-4" />
                       <span>{order.timestamp}</span>
                     </div>
                   </div>
-                  <Badge variant={getStatusBadgeVariant(order.status)}>
-                    {order.status}
+                  <Badge variant={orderStatus.variant}>
+                    {orderStatus.text}
                   </Badge>
                 </div>
 
@@ -104,12 +109,17 @@ export default function KitchenDisplayScreen({ orders, onStatusUpdate, onNavigat
                             <span className="inline-flex items-center justify-center w-6 h-6 rounded-full bg-neutral-900 text-white text-xs">
                               {item.quantity}
                             </span>
-                            <span>{item.name}</span>
+                            <span className="font-semibold">{item.name}</span>
                           </div>
                           {item.selectedModifier && (
                             <span className="text-neutral-600 ml-8 mt-1 block">
                               {item.selectedModifier}
                             </span>
+                          )}
+                           {item.notes && (
+                            <p className="text-sm text-orange-600 ml-8 mt-1 fst-italic">
+                              Ghi chú: {item.notes}
+                            </p>
                           )}
                         </div>
                       </div>
@@ -123,7 +133,7 @@ export default function KitchenDisplayScreen({ orders, onStatusUpdate, onNavigat
                       className="col-span-2"
                       onClick={() => onStatusUpdate(order.tableId, 'cooking')}
                     >
-                      Start Cooking
+                      Bắt đầu làm
                     </Button>
                   )}
                   {order.status === 'cooking' && (
@@ -132,17 +142,18 @@ export default function KitchenDisplayScreen({ orders, onStatusUpdate, onNavigat
                       variant="secondary"
                       onClick={() => onStatusUpdate(order.tableId, 'ready')}
                     >
-                      Mark as Done
+                      Báo đã xong
                     </Button>
                   )}
                   {order.status === 'ready' && (
                     <div className="col-span-2 text-center py-2 bg-green-500 text-white rounded">
-                      Ready for Pickup
+                      Sẵn sàng
                     </div>
                   )}
                 </div>
               </Card>
-            ))}
+            );
+          })}
           </div>
         )}
       </div>

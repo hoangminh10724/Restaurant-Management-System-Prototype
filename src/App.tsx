@@ -16,6 +16,9 @@ import StaffManagementScreen from './components/StaffManagementScreen';
 import PromotionManagementScreen from './components/PromotionManagementScreen';
 import ReportsScreen from './components/ReportsScreen';
 import SettingsScreen from './components/SettingsScreen';
+import InvoiceView from './components/InvoiceView';
+import CostManagementScreen, { OperatingCosts, CostData } from './components/CostManagementScreen';
+import { Toaster } from './components/ui/sonner';
 
 export type TableStatus = 'empty' | 'serving' | 'booked';
 
@@ -45,6 +48,7 @@ export interface MenuItem {
 export interface OrderItem extends MenuItem {
   quantity: number;
   selectedModifier?: string;
+  notes?: string;
 }
 
 export interface Order {
@@ -52,8 +56,9 @@ export interface Order {
   items: OrderItem[];
   timestamp: string;
   status: 'pending' | 'cooking' | 'ready' | 'completed';
-  serverId?: string;
+  serverId: string;
   customerId?: string;
+  date: string; // YYYY-MM-DD format
 }
 
 export interface Customer {
@@ -94,7 +99,7 @@ export interface Ingredient {
 export interface Staff {
   id: string;
   name: string;
-  role: 'admin' | 'manager' | 'waitstaff' | 'kitchen' | 'cashier' | 'receptionist';
+  role: 'Admin' | 'Quản lý' | 'Phục vụ' | 'Bếp' | 'Thu ngân' | 'Kho';
   phone: string;
   email: string;
   username: string;
@@ -113,13 +118,16 @@ export interface Promotion {
   isActive: boolean;
 }
 
+export type Role = 'Admin' | 'Quản lý' | 'Phục vụ' | 'Bếp' | 'Thu ngân' | 'Kho';
+
 export type Screen = 
   | 'login' 
   | 'dashboard' 
   | 'order' 
   | 'kitchen' 
   | 'payment' 
-  | 'confirmation' 
+  | 'confirmation'
+  | 'invoice'
   | 'management'
   | 'online-booking'
   | 'offline-booking'
@@ -130,13 +138,26 @@ export type Screen =
   | 'staff-mgmt'
   | 'promotions'
   | 'reports'
+  | 'cost-management'
   | 'settings';
+
+// Define a type for the bill details to be passed around
+export interface BillDetails {
+  subtotal: number;
+  totalDiscount: number;
+  appliedPromotionsDetails: { name: string; amount: number }[];
+  vatAmount: number;
+  grandTotal: number;
+}
 
 function App() {
   const [currentScreen, setCurrentScreen] = useState<Screen>('login');
   const [selectedTable, setSelectedTable] = useState<number | null>(null);
-  const [isLoggedIn, setIsLoggedIn] = useState(false);
-  const [userRole, setUserRole] = useState<'waitstaff' | 'kitchen' | 'manager' | 'admin'>('waitstaff');
+  const [loggedInUser, setLoggedInUser] = useState<Staff | null>(null);
+  const [lastCompletedTransaction, setLastCompletedTransaction] = useState<{ order: Order; billDetails: BillDetails; customer?: Customer | null } | null>(null);
+  const [operatingCosts, setOperatingCosts] = useState<OperatingCosts>({
+    "2025-11": { rent: 2000, salary: 5000, utilities: 850, marketing: 300, other: 150 }
+  });
   
   const [tables, setTables] = useState<Table[]>([
     { id: 1, status: 'empty' },
@@ -153,16 +174,31 @@ function App() {
     { id: 12, status: 'empty' },
   ]);
 
+  const [menuItems, setMenuItems] = useState<MenuItem[]>([
+    { id: 1, name: 'Caesar Salad', price: 12.99, category: 'Appetizers', isAvailable: true },
+    { id: 2, name: 'Bruschetta', price: 9.99, category: 'Appetizers', isAvailable: true },
+    { id: 3, name: 'Soup of the Day', price: 8.99, category: 'Appetizers', isAvailable: false },
+    { id: 4, name: 'Beef Steak', price: 32.99, category: 'Main Courses', modifiers: ['Rare', 'Medium-Rare', 'Medium', 'Well-done'], isAvailable: true },
+    { id: 5, name: 'Grilled Salmon', price: 28.99, category: 'Main Courses', modifiers: ['Rare', 'Medium', 'Well-done'], isAvailable: true },
+    { id: 6, name: 'Pasta Carbonara', price: 18.99, category: 'Main Courses', isAvailable: true },
+    { id: 7, name: 'Red Wine', price: 45.00, category: 'Drinks', isAvailable: false },
+    { id: 8, name: 'Beer', price: 6.50, category: 'Drinks', isAvailable: true },
+    { id: 9, name: 'Soft Drink', price: 3.50, category: 'Drinks', isAvailable: true },
+    { id: 10, name: 'Coffee', price: 4.50, category: 'Drinks', isAvailable: true },
+  ]);
+
   const [orders, setOrders] = useState<Order[]>([
     {
       tableId: 2,
       items: [
         { id: 1, name: 'Caesar Salad', price: 12.99, category: 'Appetizers', quantity: 2, isAvailable: true },
         { id: 4, name: 'Beef Steak', price: 32.99, category: 'Main Courses', quantity: 2, selectedModifier: 'Medium', isAvailable: true },
-        { id: 7, name: 'Red Wine', price: 45.00, category: 'Drinks', quantity: 1, isAvailable: true },
+        { id: 7, name: 'Red Wine', price: 45.00, category: 'Drinks', quantity: 1, isAvailable: false },
       ],
       timestamp: '6:35 PM',
       status: 'cooking',
+      serverId: 'S003',
+      date: '2025-11-11'
     },
     {
       tableId: 5,
@@ -172,18 +208,22 @@ function App() {
       ],
       timestamp: '6:50 PM',
       status: 'pending',
+      serverId: 'S003',
+      date: '2025-11-11'
     },
     {
       tableId: 10,
       items: [
-        { id: 3, name: 'Soup of the Day', price: 8.99, category: 'Appetizers', quantity: 3, isAvailable: true },
+        { id: 3, name: 'Soup of the Day', price: 8.99, category: 'Appetizers', quantity: 3, isAvailable: false },
         { id: 4, name: 'Beef Steak', price: 32.99, category: 'Main Courses', quantity: 3, selectedModifier: 'Rare', isAvailable: true },
         { id: 6, name: 'Pasta Carbonara', price: 18.99, category: 'Main Courses', quantity: 2, isAvailable: true },
         { id: 8, name: 'Beer', price: 6.50, category: 'Drinks', quantity: 4, isAvailable: true },
       ],
       timestamp: '6:15 PM',
       status: 'cooking',
-    },
+      serverId: 'S006',
+      date: '2025-11-10'
+    }
   ]);
 
   const [customers, setCustomers] = useState<Customer[]>([
@@ -229,10 +269,13 @@ function App() {
   ]);
 
   const [staff, setStaff] = useState<Staff[]>([
-    { id: 'S001', name: 'Admin User', role: 'admin', phone: '0900000000', email: 'admin@restaurant.com', username: 'admin', status: 'active', shifts: ['Morning', 'Evening'] },
-    { id: 'S002', name: 'Manager User', role: 'manager', phone: '0900000001', email: 'manager@restaurant.com', username: 'manager', status: 'active', shifts: ['Evening'] },
-    { id: 'S003', name: 'Waiter 1', role: 'waitstaff', phone: '0900000002', email: 'waiter1@restaurant.com', username: 'waiter1', status: 'active', shifts: ['Morning'] },
-    { id: 'S004', name: 'Chef 1', role: 'kitchen', phone: '0900000003', email: 'chef1@restaurant.com', username: 'chef1', status: 'active', shifts: ['Morning', 'Evening'] },
+    { id: 'S001', name: 'Admin User', role: 'Admin', phone: '0900000000', email: 'admin@restaurant.com', username: 'admin', status: 'active', shifts: ['Morning', 'Evening'] },
+    { id: 'S002', name: 'Manager User', role: 'Quản lý', phone: '0900000001', email: 'manager@restaurant.com', username: 'manager', status: 'active', shifts: ['Evening'] },
+    { id: 'S003', name: 'Waiter 1', role: 'Phục vụ', phone: '0900000002', email: 'waiter1@restaurant.com', username: 'waiter', status: 'active', shifts: ['Morning'] },
+    { id: 'S004', name: 'Chef 1', role: 'Bếp', phone: '0900000003', email: 'chef1@restaurant.com', username: 'kitchen', status: 'active', shifts: ['Morning', 'Evening'] },
+    { id: 'S005', name: 'Cashier 1', role: 'Thu ngân', phone: '0900000004', email: 'cashier1@restaurant.com', username: 'cashier', status: 'active', shifts: ['Evening'] },
+    { id: 'S006', name: 'Locked User', role: 'Phục vụ', phone: '0900000005', email: 'locked@restaurant.com', username: 'locked', status: 'inactive', shifts: [] },
+    { id: 'S007', name: 'Warehouse User', role: 'Kho', phone: '0900000006', email: 'warehouse@restaurant.com', username: 'kho', status: 'active', shifts: ['Morning'] },
   ]);
 
   const [promotions, setPromotions] = useState<Promotion[]>([
@@ -240,24 +283,31 @@ function App() {
     { id: 'P002', name: 'Steak Combo', type: 'combo', value: 45000, items: [4, 7], startDate: '2025-11-01', endDate: '2025-12-31', isActive: true },
   ]);
 
-  const handleLogin = (role: 'waitstaff' | 'kitchen' | 'manager' | 'admin') => {
-    setIsLoggedIn(true);
-    setUserRole(role);
-    if (role === 'kitchen') {
-      setCurrentScreen('kitchen');
-    } else if (role === 'manager' || role === 'admin') {
+  const handleLogin = (user: Staff) => {
+    setLoggedInUser(user);
+    const role = user.role;
+    if (role === 'Admin' || role === 'Quản lý') {
       setCurrentScreen('management');
-    } else {
+    } else if (role === 'Bếp' || role === 'Kho') {
+      setCurrentScreen('kitchen');
+    } else { 
       setCurrentScreen('dashboard');
     }
   };
 
-  const handleTableClick = (tableId: number, action: 'open' | 'view' | 'payment') => {
+  const handleOpenTable = (tableId: number, guestCount: number) => {
+    setTables(tables.map(t => 
+      t.id === tableId 
+        ? { ...t, status: 'serving' as TableStatus, customerCount: guestCount, timeElapsed: '0 min' } 
+        : t
+    ));
     setSelectedTable(tableId);
-    if (action === 'open') {
-      setTables(tables.map(t => t.id === tableId ? { ...t, status: 'serving' as TableStatus, customerCount: 0, timeElapsed: '0 min' } : t));
-      setCurrentScreen('order');
-    } else if (action === 'view') {
+    setCurrentScreen('order');
+  };
+
+  const handleTableClick = (tableId: number, action: 'view' | 'payment') => {
+    setSelectedTable(tableId);
+    if (action === 'view') {
       setCurrentScreen('order');
     } else if (action === 'payment') {
       setCurrentScreen('payment');
@@ -270,21 +320,148 @@ function App() {
       items: orderItems,
       timestamp: new Date().toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' }),
       status: 'pending',
+      serverId: loggedInUser!.id,
+      date: new Date().toISOString().split('T')[0]
     };
     setOrders([...orders, newOrder]);
     setCurrentScreen('dashboard');
   };
 
-  const handlePaymentComplete = () => {
-    if (selectedTable) {
-      setTables(tables.map(t => t.id === selectedTable ? { ...t, status: 'empty' as TableStatus, customerCount: undefined, timeElapsed: undefined } : t));
-      setOrders(orders.filter(o => o.tableId !== selectedTable));
+  const handleRegisterCustomer = (name: string, phone: string): Customer => {
+    const newCustomer: Customer = {
+      id: `C${String(customers.length + 1).padStart(3, '0')}`,
+      name,
+      phone,
+      points: 0,
+      tier: 'Silver',
+      totalSpent: 0,
+      visits: 0,
+    };
+    setCustomers([...customers, newCustomer]);
+    return newCustomer;
+  };
+
+  const handlePaymentComplete = (details: { customerId?: string; amountPaid: number; paidItems: OrderItem[]; billDetails: BillDetails }) => {
+    if (!selectedTable) return;
+
+    const order = orders.find(o => o.tableId === selectedTable);
+    if (!order) return;
+
+    // For the invoice, create a temporary order object with only the paid items
+    const invoiceOrder: Order = { ...order, items: details.paidItems };
+    const customer = customers.find(c => c.id === details.customerId);
+    setLastCompletedTransaction({ order: invoiceOrder, billDetails: details.billDetails, customer });
+
+    // Update the actual order with remaining items
+    const remainingItems = order.items.filter(originalItem => 
+      !details.paidItems.some(paidItem => 
+        paidItem.id === originalItem.id && 
+        paidItem.selectedModifier === originalItem.selectedModifier &&
+        paidItem.notes === originalItem.notes
+      )
+    );
+
+    if (remainingItems.length === 0) {
+      setTables(tables.map(t => t.id === selectedTable ? { ...t, status: 'empty' as TableStatus, customerCount: undefined, timeElapsed: undefined, bookingName: undefined, bookingPhone: undefined, bookingTime: undefined } : t));
+      setOrders(orders.map(o => o.tableId === selectedTable ? { ...o, items: [], status: 'completed' } : o));
+    } else {
+      setOrders(orders.map(o => o.tableId === selectedTable ? { ...o, items: remainingItems } : o));
     }
+
+    if (details.customerId) {
+      setCustomers(customers.map(c => {
+        if (c.id === details.customerId) {
+          const pointsEarned = Math.floor(details.amountPaid / 1000);
+          return {
+            ...c,
+            points: c.points + pointsEarned,
+            totalSpent: c.totalSpent + details.amountPaid,
+            visits: c.visits + 1,
+          };
+        }
+        return c;
+      }));
+    }
+
     setCurrentScreen('confirmation');
   };
 
+  const handleTransferTable = (sourceTableId: number, targetTableId: number) => {
+    const orderToTransfer = orders.find(o => o.tableId === sourceTableId);
+    const sourceTable = tables.find(t => t.id === sourceTableId);
+
+    if (!orderToTransfer || !sourceTable) return;
+
+    const updatedOrders = orders.map(o => 
+      o.tableId === sourceTableId ? { ...o, tableId: targetTableId } : o
+    );
+    setOrders(updatedOrders);
+
+    const updatedTables = tables.map(t => {
+      if (t.id === sourceTableId) {
+        return { ...t, status: 'empty' as TableStatus, customerCount: undefined, timeElapsed: undefined, bookingName: undefined, bookingPhone: undefined, bookingTime: undefined };
+      }
+      if (t.id === targetTableId) {
+        return { ...t, status: 'serving' as TableStatus, customerCount: sourceTable.customerCount, timeElapsed: sourceTable.timeElapsed };
+      }
+      return t;
+    });
+    setTables(updatedTables);
+  };
+
+  const handleMergeTables = (sourceTableId: number, targetTableIds: number[]) => {
+    const sourceOrder = orders.find(o => o.tableId === sourceTableId);
+    if (!sourceOrder) return;
+
+    const itemsToMerge = orders
+      .filter(o => targetTableIds.includes(o.tableId))
+      .flatMap(o => o.items);
+
+    const updatedSourceOrder = {
+      ...sourceOrder,
+      items: [...sourceOrder.items, ...itemsToMerge],
+    };
+
+    const updatedOrders = orders
+      .filter(o => !targetTableIds.includes(o.tableId))
+      .map(o => o.tableId === sourceTableId ? updatedSourceOrder : o);
+    
+    setOrders(updatedOrders);
+
+    const updatedTables = tables.map(t => 
+      targetTableIds.includes(t.id)
+        ? { ...t, status: 'empty' as TableStatus, customerCount: undefined, timeElapsed: undefined }
+        : t
+    );
+    setTables(updatedTables);
+  };
+
+  const handleStockIn = (update: { ingredientId: number; quantity: number; unitCost: number }) => {
+    setIngredients(prevIngredients => 
+      prevIngredients.map(ing => {
+        if (ing.id === update.ingredientId) {
+          return {
+            ...ing,
+            quantity: ing.quantity + update.quantity,
+            unitCost: update.unitCost, // Update the unit cost
+          };
+        }
+        return ing;
+      })
+    );
+    // In a real app, you would also save a stock-in record here.
+    console.log('Stock-in processed:', update);
+  };
+
+  const handleSaveCosts = (period: string, data: CostData) => {
+    setOperatingCosts(prev => ({
+      ...prev,
+      [period]: data,
+    }));
+  };
+
   const handleBackToDashboard = () => {
-    if (userRole === 'manager' || userRole === 'admin') {
+    if (loggedInUser?.role === 'Admin' || loggedInUser?.role === 'Quản lý') {
       setCurrentScreen('management');
     } else {
       setCurrentScreen('dashboard');
@@ -293,9 +470,8 @@ function App() {
   };
 
   const handleLogout = () => {
-    setIsLoggedIn(false);
+    setLoggedInUser(null);
     setCurrentScreen('login');
-    setUserRole('waitstaff');
   };
 
   const handleOrderUpdate = (tableId: number, updatedItems: OrderItem[]) => {
@@ -314,71 +490,95 @@ function App() {
     };
     setBookings([...bookings, newBooking]);
     
-    // Update table status if table is assigned
     if (booking.tableId) {
       setTables(tables.map(t => 
         t.id === booking.tableId 
-          ? { ...t, status: 'booked' as TableStatus, bookingTime: booking.time, bookingName: booking.customerName, bookingPhone: booking.customerPhone }
+          ? { ...t, status: 'booked' as TableStatus, bookingTime: booking.time, bookingName: booking.customerName, bookingPhone: booking.customerPhone } 
           : t
       ));
     }
   };
 
-  const currentOrder = selectedTable ? orders.find(o => o.tableId === selectedTable) : null;
+  const currentOrder = selectedTable ? orders.find(o => o.tableId === selectedTable && o.status !== 'completed') : null;
+  const userRole = loggedInUser?.role;
 
   return (
     <div className="min-h-screen bg-neutral-50">
+      <Toaster richColors />
       {currentScreen === 'login' && (
-        <LoginScreen onLogin={handleLogin} />
+        <LoginScreen 
+          onLogin={handleLogin} 
+          staff={staff}
+          onNavigate={setCurrentScreen}
+        />
       )}
-      {currentScreen === 'dashboard' && (
+
+      {currentScreen === 'dashboard' && loggedInUser && (
         <TableMapDashboard
           tables={tables}
+          orders={orders.filter(o => o.status !== 'completed')}
           onTableClick={handleTableClick}
+          onOpenTable={handleOpenTable}
+          onTransferTable={handleTransferTable}
           onNavigateToKitchen={() => setCurrentScreen('kitchen')}
           onLogout={handleLogout}
           onNavigateToManagement={() => setCurrentScreen('management')}
+          user={loggedInUser}
         />
       )}
-      {currentScreen === 'order' && selectedTable && (
+      {currentScreen === 'order' && selectedTable && loggedInUser && (
         <OrderTakingScreen
           tableId={selectedTable}
+          menuItems={menuItems}
           existingOrder={currentOrder}
           onSubmit={handleOrderSubmit}
           onUpdate={handleOrderUpdate}
           onBack={handleBackToDashboard}
         />
       )}
-      {currentScreen === 'kitchen' && (
+      {currentScreen === 'kitchen' && loggedInUser && (
         <KitchenDisplayScreen
           orders={orders}
           onStatusUpdate={handleOrderStatusUpdate}
-          onNavigateToDashboard={() => setCurrentScreen('dashboard')}
-          userRole={userRole}
+          onLogout={handleLogout}
+          userRole={userRole as Role}
         />
       )}
-      {currentScreen === 'payment' && selectedTable && currentOrder && (
+      {currentScreen === 'payment' && selectedTable && currentOrder && loggedInUser && (
         <PaymentProcessingScreen
           order={currentOrder}
           tableId={selectedTable}
           tables={tables}
+          promotions={promotions}
+          customers={customers}
+          onRegisterCustomer={handleRegisterCustomer}
+          onMergeTables={handleMergeTables}
           onPaymentComplete={handlePaymentComplete}
           onBack={handleBackToDashboard}
-          onTableUpdate={setTables}
-          onOrderUpdate={setOrders}
-          orders={orders}
         />
       )}
       {currentScreen === 'confirmation' && (
-        <ConfirmationScreen onBackToDashboard={handleBackToDashboard} />
+        <ConfirmationScreen 
+          onBackToDashboard={handleBackToDashboard} 
+          onNavigateToInvoice={() => setCurrentScreen('invoice')}
+          lastCompletedTransaction={lastCompletedTransaction}
+        />
       )}
-      {currentScreen === 'management' && (
+      {currentScreen === 'invoice' && lastCompletedTransaction && (
+        <InvoiceView
+          order={lastCompletedTransaction.order}
+          billDetails={lastCompletedTransaction.billDetails}
+          customer={lastCompletedTransaction.customer}
+          onBack={() => setCurrentScreen('dashboard')}
+        />
+      )}
+      {currentScreen === 'management' && loggedInUser && (
         <ManagementDashboard
           tables={tables}
           orders={orders}
           onLogout={handleLogout}
           onNavigate={setCurrentScreen}
-          userRole={userRole}
+          userRole={userRole as Role}
         />
       )}
       {currentScreen === 'online-booking' && (
@@ -388,7 +588,7 @@ function App() {
           onBack={() => setCurrentScreen('login')}
         />
       )}
-      {currentScreen === 'offline-booking' && (
+      {currentScreen === 'offline-booking' && loggedInUser && (
         <OfflineBookingScreen
           tables={tables}
           bookings={bookings}
@@ -396,61 +596,74 @@ function App() {
           onBack={handleBackToDashboard}
         />
       )}
-      {currentScreen === 'customer-payment' && selectedTable && currentOrder && (
+      {currentScreen === 'customer-payment' && (
         <CustomerSelfPaymentScreen
           order={currentOrder}
           tableId={selectedTable}
           onPaymentComplete={() => {
-            handlePaymentComplete();
+            if(currentOrder) {
+              const billDetails: BillDetails = { subtotal: 0, totalDiscount: 0, appliedPromotionsDetails: [], vatAmount: 0, grandTotal: 0 }; // Placeholder
+              handlePaymentComplete({ paidItems: currentOrder.items, amountPaid: 0, billDetails, customerId: undefined });
+            }
             setCurrentScreen('login');
           }}
         />
       )}
-      {currentScreen === 'loyalty' && (
+      {currentScreen === 'loyalty' && loggedInUser && (
         <LoyaltyManagementScreen
           customers={customers}
           onCustomerUpdate={setCustomers}
           onBack={handleBackToDashboard}
         />
       )}
-      {currentScreen === 'inventory' && (
+      {currentScreen === 'inventory' && loggedInUser && (
         <InventoryManagementScreen
           ingredients={ingredients}
           onInventoryUpdate={setIngredients}
+          onStockIn={handleStockIn}
           onBack={handleBackToDashboard}
         />
       )}
-      {currentScreen === 'menu-mgmt' && (
+      {currentScreen === 'menu-mgmt' && loggedInUser && (
         <MenuManagementScreen
           ingredients={ingredients}
           onBack={handleBackToDashboard}
         />
       )}
-      {currentScreen === 'staff-mgmt' && (
+      {currentScreen === 'staff-mgmt' && loggedInUser && (
         <StaffManagementScreen
           staff={staff}
           onStaffUpdate={setStaff}
           onBack={handleBackToDashboard}
         />
       )}
-      {currentScreen === 'promotions' && (
+      {currentScreen === 'promotions' && loggedInUser && (
         <PromotionManagementScreen
           promotions={promotions}
           onPromotionUpdate={setPromotions}
           onBack={handleBackToDashboard}
         />
       )}
-      {currentScreen === 'reports' && (
+      {currentScreen === 'reports' && loggedInUser && (
         <ReportsScreen
           orders={orders}
           tables={tables}
           ingredients={ingredients}
           staff={staff}
+          menuItems={menuItems}
+          operatingCosts={operatingCosts}
           onBack={handleBackToDashboard}
         />
       )}
-      {currentScreen === 'settings' && (
+      {currentScreen === 'settings' && loggedInUser && (
         <SettingsScreen
+          onBack={handleBackToDashboard}
+        />
+      )}
+      {currentScreen === 'cost-management' && loggedInUser && (
+        <CostManagementScreen
+          costs={operatingCosts}
+          onSave={handleSaveCosts}
           onBack={handleBackToDashboard}
         />
       )}
