@@ -16,11 +16,11 @@ interface OrderTakingScreenProps {
   onBack: () => void;
 }
 
-const categories = ['Appetizers', 'Main Courses', 'Drinks'];
+const categories = ['Món chính', 'Món ăn vặt', 'Nước uống'];
 
 export default function OrderTakingScreen({ tableId, menuItems, existingOrder, onSubmit, onUpdate, onBack }: OrderTakingScreenProps) {
   const [orderItems, setOrderItems] = useState<OrderItem[]>(existingOrder?.items || []);
-  const [selectedCategory, setSelectedCategory] = useState('Appetizers');
+  const [selectedCategory, setSelectedCategory] = useState('Món chính');
   const [showModifierPopup, setShowModifierPopup] = useState(false);
   const [selectedMenuItem, setSelectedMenuItem] = useState<MenuItem | null>(null);
 
@@ -167,6 +167,7 @@ export default function OrderTakingScreen({ tableId, menuItems, existingOrder, o
                     }`}
                     onClick={() => handleAddItem(item)}
                   >
+                    {item.image && <img src={item.image} alt={item.name} className="w-16 h-16 object-cover rounded-md mr-4" />}
                     <div className="flex-1">
                       <h3 className={`${!item.isAvailable ? 'text-neutral-400' : ''}`}>{item.name}</h3>
                       {item.isAvailable && item.modifiers && (
@@ -178,7 +179,7 @@ export default function OrderTakingScreen({ tableId, menuItems, existingOrder, o
                     </div>
                     <div className="flex items-center gap-3">
                       <span className={`font-semibold ${!item.isAvailable ? 'text-neutral-400' : 'text-neutral-900'}`}>
-                        ${item.price.toFixed(2)}
+                        {item.price.toLocaleString('vi-VN')}₫
                       </span>
                       <Button size="sm" disabled={!item.isAvailable}>
                         <Plus className="w-4 h-4" />
@@ -234,7 +235,7 @@ export default function OrderTakingScreen({ tableId, menuItems, existingOrder, o
                             </Button>
                           </div>
                           <span className="text-neutral-900 font-semibold">
-                            ${(item.price * item.quantity).toFixed(2)}
+                            {(item.price * item.quantity).toLocaleString('vi-VN')}₫
                           </span>
                         </div>
                         <Input
@@ -251,7 +252,7 @@ export default function OrderTakingScreen({ tableId, menuItems, existingOrder, o
                   <div className="border-t pt-4 space-y-3">
                     <div className="flex items-center justify-between text-lg font-bold">
                       <span>Tổng cộng</span>
-                      <span>${calculateSubtotal().toFixed(2)}</span>
+                      <span>{calculateSubtotal().toLocaleString('vi-VN')}₫</span>
                     </div>
                   </div>
 

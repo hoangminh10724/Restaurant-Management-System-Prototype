@@ -175,25 +175,24 @@ function App() {
   ]);
 
   const [menuItems, setMenuItems] = useState<MenuItem[]>([
-    { id: 1, name: 'Caesar Salad', price: 12.99, category: 'Appetizers', isAvailable: true },
-    { id: 2, name: 'Bruschetta', price: 9.99, category: 'Appetizers', isAvailable: true },
-    { id: 3, name: 'Soup of the Day', price: 8.99, category: 'Appetizers', isAvailable: false },
-    { id: 4, name: 'Beef Steak', price: 32.99, category: 'Main Courses', modifiers: ['Rare', 'Medium-Rare', 'Medium', 'Well-done'], isAvailable: true },
-    { id: 5, name: 'Grilled Salmon', price: 28.99, category: 'Main Courses', modifiers: ['Rare', 'Medium', 'Well-done'], isAvailable: true },
-    { id: 6, name: 'Pasta Carbonara', price: 18.99, category: 'Main Courses', isAvailable: true },
-    { id: 7, name: 'Red Wine', price: 45.00, category: 'Drinks', isAvailable: false },
-    { id: 8, name: 'Beer', price: 6.50, category: 'Drinks', isAvailable: true },
-    { id: 9, name: 'Soft Drink', price: 3.50, category: 'Drinks', isAvailable: true },
-    { id: 10, name: 'Coffee', price: 4.50, category: 'Drinks', isAvailable: true },
+    { id: 1, name: 'Bánh cuốn', category: 'Món chính', price: 50000, isAvailable: true, image: '/Food/bánh cuốn.jpg' },
+    { id: 2, name: 'Bánh xèo', category: 'Món chính', price: 60000, isAvailable: true, image: '/Food/bánh xèo.jpg' },
+    { id: 3, name: 'Canh ngao', category: 'Món chính', price: 55000, isAvailable: true, image: '/Food/canh ngao.jpg' },
+    { id: 4, name: 'Cơm tấm', category: 'Món chính', price: 45000, isAvailable: true, image: '/Food/cơm tấm.jpg' },
+    { id: 5, name: 'Tokbokki', category: 'Món ăn vặt', price: 70000, isAvailable: true, image: '/Food/tokbokki.jpg' },
+    { id: 6, name: 'Coca-Cola', category: 'Nước uống', price: 15000, isAvailable: true, image: '/Drink/coca.jpg' },
+    { id: 7, name: 'Fanta', category: 'Nước uống', price: 15000, isAvailable: true, image: '/Drink/fanta.jpg' },
+    { id: 8, name: 'Nước ép', category: 'Nước uống', price: 20000, isAvailable: true, image: '/Drink/nước ép.jpg' },
+    { id: 9, name: 'Pepsi', category: 'Nước uống', price: 15000, isAvailable: true, image: '/Drink/pepsi.jpg' },
   ]);
 
   const [orders, setOrders] = useState<Order[]>([
     {
       tableId: 2,
       items: [
-        { id: 1, name: 'Caesar Salad', price: 12.99, category: 'Appetizers', quantity: 2, isAvailable: true },
-        { id: 4, name: 'Beef Steak', price: 32.99, category: 'Main Courses', quantity: 2, selectedModifier: 'Medium', isAvailable: true },
-        { id: 7, name: 'Red Wine', price: 45.00, category: 'Drinks', quantity: 1, isAvailable: false },
+        { id: 1, name: 'Bánh cuốn', category: 'Món chính', price: 50000, quantity: 2, isAvailable: true, image: '/Food/bánh cuốn.jpg' },
+        { id: 4, name: 'Cơm tấm', category: 'Món chính', price: 45000, quantity: 2, isAvailable: true, image: '/Food/cơm tấm.jpg' },
+        { id: 6, name: 'Coca-Cola', category: 'Nước uống', price: 15000, quantity: 1, isAvailable: true, image: '/Drink/coca.jpg' },
       ],
       timestamp: '6:35 PM',
       status: 'cooking',
@@ -203,8 +202,8 @@ function App() {
     {
       tableId: 5,
       items: [
-        { id: 2, name: 'Bruschetta', price: 9.99, category: 'Appetizers', quantity: 1, isAvailable: true },
-        { id: 5, name: 'Grilled Salmon', price: 28.99, category: 'Main Courses', quantity: 2, selectedModifier: 'Well-done', isAvailable: true },
+        { id: 2, name: 'Bánh xèo', category: 'Món chính', price: 60000, quantity: 1, isAvailable: true, image: '/Food/bánh xèo.jpg' },
+        { id: 8, name: 'Nước ép', category: 'Nước uống', price: 20000, quantity: 2, isAvailable: true, image: '/Drink/nước ép.jpg' },
       ],
       timestamp: '6:50 PM',
       status: 'pending',
@@ -214,10 +213,8 @@ function App() {
     {
       tableId: 10,
       items: [
-        { id: 3, name: 'Soup of the Day', price: 8.99, category: 'Appetizers', quantity: 3, isAvailable: false },
-        { id: 4, name: 'Beef Steak', price: 32.99, category: 'Main Courses', quantity: 3, selectedModifier: 'Rare', isAvailable: true },
-        { id: 6, name: 'Pasta Carbonara', price: 18.99, category: 'Main Courses', quantity: 2, isAvailable: true },
-        { id: 8, name: 'Beer', price: 6.50, category: 'Drinks', quantity: 4, isAvailable: true },
+        { id: 5, name: 'Tokbokki', category: 'Món ăn vặt', price: 70000, quantity: 3, isAvailable: true, image: '/Food/tokbokki.jpg' },
+        { id: 7, name: 'Fanta', category: 'Nước uống', price: 15000, quantity: 4, isAvailable: true, image: '/Drink/fanta.jpg' },
       ],
       timestamp: '6:15 PM',
       status: 'cooking',

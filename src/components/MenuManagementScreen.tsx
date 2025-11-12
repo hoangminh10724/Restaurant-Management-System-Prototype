@@ -11,11 +11,15 @@ interface MenuManagementScreenProps {
 
 export default function MenuManagementScreen({ ingredients, onBack }: MenuManagementScreenProps) {
   const menuItems = [
-    { id: 1, name: 'Caesar Salad', category: 'Appetizers', price: 12.99, cost: 5.50, isAvailable: true },
-    { id: 2, name: 'Bruschetta', category: 'Appetizers', price: 9.99, cost: 3.20, isAvailable: true },
-    { id: 4, name: 'Beef Steak', category: 'Main Courses', price: 32.99, cost: 15.00, isAvailable: true, ingredients: [{ name: 'Beef', amount: '200g' }] },
-    { id: 5, name: 'Grilled Salmon', category: 'Main Courses', price: 28.99, cost: 12.50, isAvailable: true },
-    { id: 7, name: 'Red Wine', category: 'Drinks', price: 45.00, cost: 20.00, isAvailable: true },
+    { id: 1, name: 'Bánh cuốn', category: 'Món chính', price: 50000, cost: 20000, isAvailable: true, image: '/Food/bánh cuốn.jpg' },
+    { id: 2, name: 'Bánh xèo', category: 'Món chính', price: 60000, cost: 25000, isAvailable: true, image: '/Food/bánh xèo.jpg' },
+    { id: 3, name: 'Canh ngao', category: 'Món chính', price: 55000, cost: 22000, isAvailable: true, image: '/Food/canh ngao.jpg' },
+    { id: 4, name: 'Cơm tấm', category: 'Món chính', price: 45000, cost: 18000, isAvailable: true, image: '/Food/cơm tấm.jpg' },
+    { id: 5, name: 'Tokbokki', category: 'Món ăn vặt', price: 70000, cost: 30000, isAvailable: true, image: '/Food/tokbokki.jpg' },
+    { id: 6, name: 'Coca-Cola', category: 'Nước uống', price: 15000, cost: 5000, isAvailable: true, image: '/Drink/coca.jpg' },
+    { id: 7, name: 'Fanta', category: 'Nước uống', price: 15000, cost: 5000, isAvailable: true, image: '/Drink/fanta.jpg' },
+    { id: 8, name: 'Nước ép', category: 'Nước uống', price: 20000, cost: 8000, isAvailable: true, image: '/Drink/nước ép.jpg' },
+    { id: 9, name: 'Pepsi', category: 'Nước uống', price: 15000, cost: 5000, isAvailable: true, image: '/Drink/pepsi.jpg' },
   ];
 
   return (
@@ -45,6 +49,7 @@ export default function MenuManagementScreen({ ingredients, onBack }: MenuManage
             <Card key={item.id}>
               <CardContent className="p-6">
                 <div className="flex items-start justify-between">
+                  <img src={item.image} alt={item.name} className="w-24 h-24 object-cover rounded-md mr-6" />
                   <div className="flex-1">
                     <div className="flex items-center gap-3 mb-2">
                       <h2>{item.name}</h2>
@@ -62,15 +67,15 @@ export default function MenuManagementScreen({ ingredients, onBack }: MenuManage
                     <div className="grid grid-cols-4 gap-4 text-sm mt-3">
                       <div>
                         <p className="text-neutral-500">Giá bán</p>
-                        <p>${item.price}</p>
+                        <p>{item.price.toLocaleString('vi-VN')}₫</p>
                       </div>
                       <div>
                         <p className="text-neutral-500">Giá vốn</p>
-                        <p>${item.cost}</p>
+                        <p>{item.cost.toLocaleString('vi-VN')}₫</p>
                       </div>
                       <div>
                         <p className="text-neutral-500">Lợi nhuận</p>
-                        <p className="text-green-600">${(item.price - item.cost).toFixed(2)}</p>
+                        <p className="text-green-600">{(item.price - item.cost).toLocaleString('vi-VN')}₫</p>
                       </div>
                       <div>
                         <p className="text-neutral-500">Tỷ suất lợi nhuận</p>
