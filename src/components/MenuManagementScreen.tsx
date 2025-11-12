@@ -1,16 +1,16 @@
 import { useState } from 'react';
 import { Ingredient } from '../App';
 import { Button } from './ui/button';
-import { Card, CardContent, CardHeader, CardTitle } from './ui/card';
+import { Card, CardContent } from './ui/card';
 import { ArrowLeft, Plus, Edit, Eye, EyeOff } from 'lucide-react';
+import MenuItemDialog, { MenuItem } from './MenuItemDialog';
 
 interface MenuManagementScreenProps {
   ingredients: Ingredient[];
   onBack: () => void;
 }
 
-export default function MenuManagementScreen({ ingredients, onBack }: MenuManagementScreenProps) {
-  const menuItems = [
+const initialMenuItems: MenuItem[] = [
     { id: 1, name: 'Bánh cuốn', category: 'Món chính', price: 50000, cost: 20000, isAvailable: true, image: '/Food/bánh cuốn.jpg' },
     { id: 2, name: 'Bánh xèo', category: 'Món chính', price: 60000, cost: 25000, isAvailable: true, image: '/Food/bánh xèo.jpg' },
     { id: 3, name: 'Canh ngao', category: 'Món chính', price: 55000, cost: 22000, isAvailable: true, image: '/Food/canh ngao.jpg' },
@@ -20,10 +20,57 @@ export default function MenuManagementScreen({ ingredients, onBack }: MenuManage
     { id: 7, name: 'Fanta', category: 'Nước uống', price: 15000, cost: 5000, isAvailable: true, image: '/Drink/fanta.jpg' },
     { id: 8, name: 'Nước ép', category: 'Nước uống', price: 20000, cost: 8000, isAvailable: true, image: '/Drink/nước ép.jpg' },
     { id: 9, name: 'Pepsi', category: 'Nước uống', price: 15000, cost: 5000, isAvailable: true, image: '/Drink/pepsi.jpg' },
-  ];
+];
+
+export default function MenuManagementScreen({ onBack }: MenuManagementScreenProps) {
+  const [menuItems, setMenuItems] = useState<MenuItem[]>(initialMenuItems);
+  const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const [editingItem, setEditingItem] = useState<MenuItem | null>(null);
+
+  const handleAddItem = () => {
+    setEditingItem(null);
+    setIsDialogOpen(true);
+  };
+
+  const handleEditItem = (item: MenuItem) => {
+    setEditingItem(item);
+    setIsDialogOpen(true);
+  };
+
+  const handleCloseDialog = () => {
+    setIsDialogOpen(false);
+    setEditingItem(null);
+  };
+
+  const handleSaveItem = (item: MenuItem) => {
+    if (editingItem) {
+      // Update existing item
+      setMenuItems(menuItems.map((i) => (i.id === item.id ? item : i)));
+    } else {
+      // Add new item
+      setMenuItems([...menuItems, item]);
+    }
+    handleCloseDialog();
+  };
+
+  const handleToggleAvailability = (id: number) => {
+    setMenuItems(
+      menuItems.map((item) =>
+        item.id === id ? { ...item, isAvailable: !item.isAvailable } : item
+      )
+    );
+  };
 
   return (
-    <div className="min-h-screen bg-neutral-50">
+    <div
+      className="min-h-screen"
+      style={{
+        backgroundImage: "url('/Background/chung.jpg')",
+        backgroundSize: 'cover',
+        backgroundPosition: 'center',
+        backgroundRepeat: 'no-repeat',
+      }}
+    >
       <div className="bg-white border-b px-6 py-4">
         <div className="flex items-center justify-between max-w-7xl mx-auto">
           <div className="flex items-center gap-4">
@@ -36,7 +83,7 @@ export default function MenuManagementScreen({ ingredients, onBack }: MenuManage
               <p className="text-neutral-500 mt-1">Thêm, sửa, ẩn món ăn & đặt định mức nguyên liệu</p>
             </div>
           </div>
-          <Button>
+          <Button onClick={handleAddItem}>
             <Plus className="w-4 h-4 mr-2" />
             Thêm món mới
           </Button>
@@ -79,24 +126,16 @@ export default function MenuManagementScreen({ ingredients, onBack }: MenuManage
                       </div>
                       <div>
                         <p className="text-neutral-500">Tỷ suất lợi nhuận</p>
-                        <p>{(((item.price - item.cost) / item.price) * 100).toFixed(1)}%</p>
+                        <p>{item.price > 0 ? (((item.price - item.cost) / item.price) * 100).toFixed(1) : 0}%</p>
                       </div>
                     </div>
-                    {item.ingredients && (
-                      <div className="mt-3 p-3 bg-neutral-50 rounded">
-                        <p className="text-sm font-medium mb-2">Công thức (Định mức nguyên liệu):</p>
-                        {item.ingredients.map((ing, idx) => (
-                          <p key={idx} className="text-sm text-neutral-600">• {ing.name}: {ing.amount}</p>
-                        ))}
-                      </div>
-                    )}
                   </div>
                   <div className="flex gap-2 ml-4">
-                    <Button variant="outline" size="sm">
+                    <Button variant="outline" size="sm" onClick={() => handleEditItem(item)}>
                       <Edit className="w-4 h-4 mr-1" />
                       Sửa
                     </Button>
-                    <Button variant="outline" size="sm">
+                    <Button variant="outline" size="sm" onClick={() => handleToggleAvailability(item.id)}>
                       {item.isAvailable ? <EyeOff className="w-4 h-4 mr-1" /> : <Eye className="w-4 h-4 mr-1" />}
                       {item.isAvailable ? 'Ẩn' : 'Hiện'}
                     </Button>
@@ -107,6 +146,12 @@ export default function MenuManagementScreen({ ingredients, onBack }: MenuManage
           ))}
         </div>
       </div>
+      <MenuItemDialog
+        isOpen={isDialogOpen}
+        onClose={handleCloseDialog}
+        onSave={handleSaveItem}
+        itemToEdit={editingItem}
+      />
     </div>
   );
 }

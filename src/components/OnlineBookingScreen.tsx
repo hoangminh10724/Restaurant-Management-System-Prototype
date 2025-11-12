@@ -60,7 +60,15 @@ export default function OnlineBookingScreen({ tables, onBookingCreate, onBack }:
 
   if (submitted) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-green-50 to-teal-50 flex items-center justify-center p-4">
+      <div
+        className="min-h-screen flex items-center justify-center p-4"
+        style={{
+          backgroundImage: "url('/Background/service.jpg')",
+          backgroundSize: 'cover',
+          backgroundPosition: 'center',
+          backgroundRepeat: 'no-repeat',
+        }}
+      >
         <Card className="w-full max-w-md text-center p-8">
           <div className="mx-auto w-20 h-20 bg-green-100 rounded-full flex items-center justify-center mb-6">
             <CheckCircle className="w-12 h-12 text-green-600" />
@@ -83,7 +91,15 @@ export default function OnlineBookingScreen({ tables, onBookingCreate, onBack }:
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-orange-50 to-amber-50 p-4">
+    <div
+      className="min-h-screen p-4"
+      style={{
+        backgroundImage: "url('/Background/service.jpg')",
+        backgroundSize: 'cover',
+        backgroundPosition: 'center',
+        backgroundRepeat: 'no-repeat',
+      }}
+    >
       <div className="max-w-2xl mx-auto py-8">
         <Button variant="ghost" onClick={onBack} className="mb-4">
           <ArrowLeft className="w-4 h-4 mr-2" /> Quay lại

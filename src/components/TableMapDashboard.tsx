@@ -96,9 +96,17 @@ export default function TableMapDashboard({ tables, orders, onTableClick, onOpen
   };
 
   return (
-    <div className="min-h-screen bg-neutral-50">
+    <div
+      className="min-h-screen"
+      style={{
+        backgroundImage: "url('/Background/Service.jpg')",
+        backgroundSize: 'cover',
+        backgroundPosition: 'center',
+        backgroundRepeat: 'no-repeat',
+      }}
+    >
       {/* Header */}
-      <div className="bg-white border-b px-6 py-4">
+      <div className="border-b px-6 py-4">
         <div className="flex items-center justify-between max-w-7xl mx-auto">
           <div>
             <h1>Sơ đồ bàn</h1>

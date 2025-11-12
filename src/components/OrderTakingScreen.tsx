@@ -119,7 +119,15 @@ export default function OrderTakingScreen({ tableId, menuItems, existingOrder, o
   const filteredMenuItems = menuItems.filter(item => item.category === selectedCategory);
 
   return (
-    <div className="min-h-screen bg-neutral-50">
+    <div
+      className="min-h-screen"
+      style={{
+        backgroundImage: "url('/Background/service.jpg')",
+        backgroundSize: 'cover',
+        backgroundPosition: 'center',
+        backgroundRepeat: 'no-repeat',
+      }}
+    >
       {/* Header */}
       <div className="bg-white border-b px-6 py-4 sticky top-0 z-10">
         <div className="flex items-center justify-between max-w-7xl mx-auto">

@@ -28,7 +28,15 @@ export default function PromotionManagementScreen({ promotions, onPromotionUpdat
   };
 
   return (
-    <div className="min-h-screen bg-neutral-50">
+    <div
+      className="min-h-screen"
+      style={{
+        backgroundImage: "url('/Background/chung.jpg')",
+        backgroundSize: 'cover',
+        backgroundPosition: 'center',
+        backgroundRepeat: 'no-repeat',
+      }}
+    >
       <div className="bg-white border-b px-6 py-4">
         <div className="flex items-center justify-between max-w-7xl mx-auto">
           <div className="flex items-center gap-4">

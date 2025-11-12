@@ -58,7 +58,15 @@ export default function CostManagementScreen({ costs, onSave, onBack }: CostMana
   const totalCost = Object.values(formData).reduce((sum, value) => sum + value, 0);
 
   return (
-    <div className="min-h-screen bg-neutral-50">
+    <div
+      className="min-h-screen"
+      style={{
+        backgroundImage: "url('/Background/chung.jpg')",
+        backgroundSize: 'cover',
+        backgroundPosition: 'center',
+        backgroundRepeat: 'no-repeat',
+      }}
+    >
       <div className="bg-white border-b px-6 py-4">
         <div className="flex items-center justify-between max-w-4xl mx-auto">
           <div className="flex items-center gap-4">
