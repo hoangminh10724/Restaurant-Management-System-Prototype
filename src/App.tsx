@@ -31,6 +31,7 @@ export interface Table {
   bookingName?: string;
   bookingPhone?: string;
   bookingId?: string;
+  maxSeats?: number;
 }
 
 export interface MenuItem {
@@ -160,18 +161,33 @@ function App() {
   });
   
   const [tables, setTables] = useState<Table[]>([
-    { id: 1, status: 'empty' },
-    { id: 2, status: 'serving', customerCount: 4, timeElapsed: '25 min' },
-    { id: 3, status: 'empty' },
-    { id: 4, status: 'booked', bookingTime: '7:00 PM', bookingName: 'Smith', bookingPhone: '0901234567' },
-    { id: 5, status: 'serving', customerCount: 2, timeElapsed: '10 min' },
-    { id: 6, status: 'empty' },
-    { id: 7, status: 'empty' },
-    { id: 8, status: 'booked', bookingTime: '8:30 PM', bookingName: 'Johnson', bookingPhone: '0912345678' },
-    { id: 9, status: 'empty' },
-    { id: 10, status: 'serving', customerCount: 6, timeElapsed: '45 min' },
-    { id: 11, status: 'empty' },
-    { id: 12, status: 'empty' },
+    // Create 24 tables, 8 per floor. maxSeats set up variably per table.
+    { id: 1, status: 'empty', maxSeats: 4 },
+    { id: 2, status: 'serving', customerCount: 4, timeElapsed: '25 min', maxSeats: 6 },
+    { id: 3, status: 'empty', maxSeats: 4 },
+    { id: 4, status: 'booked', bookingTime: '7:00 PM', bookingName: 'Smith', bookingPhone: '0901234567', maxSeats: 6 },
+    { id: 5, status: 'serving', customerCount: 2, timeElapsed: '10 min', maxSeats: 2 },
+    { id: 6, status: 'empty', maxSeats: 4 },
+    { id: 7, status: 'empty', maxSeats: 4 },
+    { id: 8, status: 'booked', bookingTime: '8:30 PM', bookingName: 'Johnson', bookingPhone: '0912345678', maxSeats: 6 },
+
+    { id: 9, status: 'empty', maxSeats: 4 },
+    { id: 10, status: 'serving', customerCount: 6, timeElapsed: '45 min', maxSeats: 6 },
+    { id: 11, status: 'empty', maxSeats: 2 },
+    { id: 12, status: 'empty', maxSeats: 4 },
+    { id: 13, status: 'empty', maxSeats: 4 },
+    { id: 14, status: 'serving', customerCount: 3, timeElapsed: '12 min', maxSeats: 4 },
+    { id: 15, status: 'booked', bookingTime: '7:30 PM', bookingName: 'Le', bookingPhone: '0922222222', maxSeats: 6 },
+    { id: 16, status: 'empty', maxSeats: 4 },
+
+    { id: 17, status: 'empty', maxSeats: 4 },
+    { id: 18, status: 'booked', bookingTime: '8:00 PM', bookingName: 'Tran', bookingPhone: '0933333333', maxSeats: 6 },
+    { id: 19, status: 'empty', maxSeats: 4 },
+    { id: 20, status: 'serving', customerCount: 5, timeElapsed: '30 min', maxSeats: 6 },
+    { id: 21, status: 'empty', maxSeats: 2 },
+    { id: 22, status: 'empty', maxSeats: 4 },
+    { id: 23, status: 'empty', maxSeats: 4 },
+    { id: 24, status: 'empty', maxSeats: 6 },
   ]);
 
   const [menuItems, setMenuItems] = useState<MenuItem[]>([
@@ -506,7 +522,6 @@ function App() {
         <LoginScreen 
           onLogin={handleLogin} 
           staff={staff}
-          onNavigate={setCurrentScreen}
         />
       )}
 
@@ -518,6 +533,7 @@ function App() {
           onOpenTable={handleOpenTable}
           onTransferTable={handleTransferTable}
           onNavigateToKitchen={() => setCurrentScreen('kitchen')}
+          onNavigateToOnlineBooking={() => setCurrentScreen('online-booking')}
           onLogout={handleLogout}
           onNavigateToManagement={() => setCurrentScreen('management')}
           user={loggedInUser}
@@ -545,11 +561,9 @@ function App() {
         <PaymentProcessingScreen
           order={currentOrder}
           tableId={selectedTable}
-          tables={tables}
           promotions={promotions}
           customers={customers}
           onRegisterCustomer={handleRegisterCustomer}
-          onMergeTables={handleMergeTables}
           onPaymentComplete={handlePaymentComplete}
           onBack={handleBackToDashboard}
         />
@@ -593,7 +607,7 @@ function App() {
           onBack={handleBackToDashboard}
         />
       )}
-      {currentScreen === 'customer-payment' && (
+      {currentScreen === 'customer-payment' && currentOrder && selectedTable && (
         <CustomerSelfPaymentScreen
           order={currentOrder}
           tableId={selectedTable}
@@ -648,7 +662,6 @@ function App() {
           ingredients={ingredients}
           staff={staff}
           menuItems={menuItems}
-          operatingCosts={operatingCosts}
           onBack={handleBackToDashboard}
         />
       )}

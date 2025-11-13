@@ -3,7 +3,7 @@ import { Table, TableStatus, Staff, Order } from '../App';
 import { Button } from './ui/button';
 import { Card } from './ui/card';
 import { Badge } from './ui/badge';
-import { Users, Clock, Calendar, ChefHat, LogOut, UserCog, ShoppingBasket } from 'lucide-react';
+import { Users, Clock, Calendar, ChefHat, LogOut, UserCog, ShoppingBasket, MapPin, Bell, Search, Settings } from 'lucide-react';
 import GuestCountPopup from './GuestCountPopup';
 import TableActionsPopup from './TableActionsPopup';
 import TransferTableDialog from './TransferTableDialog';
@@ -15,16 +15,21 @@ interface TableMapDashboardProps {
   onOpenTable: (tableId: number, guestCount: number) => void;
   onTransferTable: (sourceTableId: number, targetTableId: number) => void;
   onNavigateToKitchen: () => void;
+  onNavigateToOnlineBooking?: () => void;
   onLogout?: () => void;
   onNavigateToManagement?: () => void;
   user: Staff;
 }
 
-export default function TableMapDashboard({ tables, orders, onTableClick, onOpenTable, onTransferTable, onNavigateToKitchen, onLogout, onNavigateToManagement, user }: TableMapDashboardProps) {
+export default function TableMapDashboard({ tables, orders, onTableClick, onOpenTable, onTransferTable, onNavigateToKitchen, onNavigateToOnlineBooking, onLogout, onNavigateToManagement, user }: TableMapDashboardProps) {
   const [isGuestPopupOpen, setGuestPopupOpen] = useState(false);
   const [isActionsPopupOpen, setActionsPopupOpen] = useState(false);
   const [isTransferDialogOpen, setTransferDialogOpen] = useState(false);
   const [selectedTable, setSelectedTable] = useState<Table | null>(null);
+  const [isSettingModalOpen, setSettingModalOpen] = useState(false);
+  const [selectedFloor, setSelectedFloor] = useState<number>(1);
+  const [selectedStatuses, setSelectedStatuses] = useState<TableStatus[]>(['empty', 'serving', 'booked']);
+  const [functionModalOpen, setFunctionModalOpen] = useState(false);
 
   const getTableStatusColor = (status: TableStatus) => {
     switch (status) {
@@ -95,125 +100,406 @@ export default function TableMapDashboard({ tables, orders, onTableClick, onOpen
     setSelectedTable(null);
   };
 
+  // Prepare tables for the selected floor (8 per floor)
+  const _tablesPerFloor = 8;
+  const _floorStart = (selectedFloor - 1) * _tablesPerFloor + 1;
+  const _floorEnd = selectedFloor * _tablesPerFloor;
+  const floorTables = tables.filter(table => table.id >= _floorStart && table.id <= _floorEnd && selectedStatuses.includes(table.status));
+
   return (
-    <div
-      className="min-h-screen"
-      style={{
-        backgroundImage: "url('/Background/Service.jpg')",
-        backgroundSize: 'cover',
-        backgroundPosition: 'center',
-        backgroundRepeat: 'no-repeat',
-      }}
-    >
-      {/* Header */}
-      <div className="border-b px-6 py-4">
-        <div className="flex items-center justify-between max-w-7xl mx-auto">
-          <div>
-            <h1>Sơ đồ bàn</h1>
-            <p className="text-neutral-500 mt-1">Xin chào, {user.name} ({user.role})</p>
+    <div style={{ minHeight: '100vh', backgroundColor: '#eef2f6', display: 'flex', flexDirection: 'column' }}>
+      {/* Taskbar Header - Blue */}
+      <div style={{ backgroundColor: '#2563eb', padding: '16px 24px', borderBottom: '1px solid #1e40af', boxShadow: '0 1px 3px rgba(0,0,0,0.1)' }}>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '12px' }}>
+          {/* Left Section - Navigation Buttons */}
+          <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+            <button style={{ display: 'flex', alignItems: 'center', gap: '8px', color: 'white', padding: '8px 12px', borderRadius: '4px', backgroundColor: 'transparent', border: 'none', cursor: 'pointer', fontSize: '14px', fontWeight: '500' }} onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#1d4ed8'} onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'transparent'}>
+              <MapPin size={20} />
+              <span>Sơ đồ</span>
+            </button>
+            <button onClick={onNavigateToKitchen} style={{ display: 'flex', alignItems: 'center', gap: '8px', color: 'white', padding: '8px 12px', borderRadius: '4px', backgroundColor: 'transparent', border: 'none', cursor: 'pointer', fontSize: '14px', fontWeight: '500' }} onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#1d4ed8'} onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'transparent'}>
+              <ChefHat size={20} />
+              <span>Bếp</span>
+            </button>
+            <button onClick={onNavigateToOnlineBooking} style={{ display: 'flex', alignItems: 'center', gap: '8px', color: 'white', padding: '8px 12px', borderRadius: '4px', backgroundColor: 'transparent', border: 'none', cursor: 'pointer', fontSize: '14px', fontWeight: '500' }} onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#1d4ed8'} onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'transparent'}>
+              <Calendar size={20} />
+              <span>Đặt bàn Online</span>
+            </button>
           </div>
-          <div className="flex gap-3">
-            {user.role !== 'Bếp' && user.role !== 'Kho' && (
-              <Button variant="outline" onClick={onNavigateToKitchen}>
-                <ChefHat className="w-4 h-4 mr-2" />
-                Bếp
-              </Button>
-            )}
+
+          {/* Right Section - Search Bar, Notification & Settings */}
+          <div style={{ display: 'flex', alignItems: 'center', gap: '16px', marginLeft: 'auto' }}>
+            {/* Search Bar */}
+            <div style={{ position: 'relative', width: '256px' }}>
+              <Search size={18} style={{ position: 'absolute', left: '12px', top: '50%', transform: 'translateY(-50%)', color: '#d1d5db' }} />
+              <input
+                type="text"
+                placeholder="Tìm kiếm bàn..."
+                style={{ width: '100%', paddingLeft: '40px', paddingRight: '16px', paddingTop: '8px', paddingBottom: '8px', backgroundColor: '#3b82f6', color: 'white', border: 'none', borderRadius: '4px', fontSize: '14px', outline: 'none' }}
+              />
+            </div>
+
+            {/* Notification Bell */}
+            <button style={{ position: 'relative', color: 'white', padding: '8px', backgroundColor: 'transparent', border: 'none', cursor: 'pointer', borderRadius: '4px' }} onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#1d4ed8'} onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'transparent'}>
+              <Bell size={20} />
+              <span style={{ position: 'absolute', top: '4px', right: '4px', width: '8px', height: '8px', backgroundColor: '#f87171', borderRadius: '50%' }}></span>
+            </button>
+
+            {/* Settings Gear */}
+            <button 
+              onClick={() => setSettingModalOpen(true)}
+              style={{ color: 'white', padding: '8px', backgroundColor: 'transparent', border: 'none', cursor: 'pointer', borderRadius: '4px', fontSize: '14px' }}
+              onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#1d4ed8'} 
+              onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'transparent'}
+            >
+              ⚙️
+            </button>
+            
+            {/* Admin Button */}
             {(user.role === 'Admin' || user.role === 'Quản lý') && onNavigateToManagement && (
-              <Button variant="outline" onClick={onNavigateToManagement}>
-                <UserCog className="w-4 h-4 mr-2" />
-                Quản lý
-              </Button>
+              <button onClick={onNavigateToManagement} style={{ display: 'flex', alignItems: 'center', gap: '8px', color: 'white', padding: '8px 12px', borderRadius: '4px', backgroundColor: 'transparent', border: 'none', cursor: 'pointer', fontSize: '14px', fontWeight: '500' }} onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#1d4ed8'} onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'transparent'}>
+                <UserCog size={20} />
+                <span>Quản lý</span>
+              </button>
             )}
-            <Button variant="outline" onClick={onLogout}>
-              <LogOut className="w-4 h-4 mr-2" />
-              Đăng xuất
-            </Button>
+            
+            {/* Logout Button */}
+            <button onClick={onLogout} style={{ display: 'flex', alignItems: 'center', gap: '8px', color: 'white', padding: '8px 12px', borderRadius: '4px', backgroundColor: 'transparent', border: '1px solid #3b82f6', cursor: 'pointer', fontSize: '14px', fontWeight: '500', marginLeft: '8px' }} onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#1d4ed8'} onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'transparent'}>
+              <LogOut size={20} />
+              <span>Đăng xuất</span>
+            </button>
+          </div>
+        </div>
+
+        {/* User Info */}
+        <div style={{ paddingLeft: '24px', paddingRight: '24px', paddingTop: '8px', paddingBottom: '8px', backgroundColor: '#1e3a8a', fontSize: '12px', color: '#dbeafe', borderTop: '1px solid #1e40af', marginTop: '12px' }}>
+          Xin chào, <span style={{ fontWeight: 'bold' }}>{user.name}</span> ({user.role})
+        </div>
+      </div>
+
+      {/* Filter Section */}
+      <div style={{ backgroundColor: 'white', borderBottom: '1px solid #e5e7eb', padding: '12px 24px', display: 'flex', alignItems: 'center', gap: '32px', flexWrap: 'wrap' }}>
+        {/* Floor Filter */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+          <span style={{ fontWeight: '600', color: '#374151', fontSize: '14px' }}>Tầng:</span>
+          <div style={{ display: 'flex', gap: '8px' }}>
+            {[1, 2, 3].map((floor) => (
+              <button
+                key={floor}
+                onClick={() => setSelectedFloor(floor)}
+                style={{
+                  padding: '6px 16px',
+                  borderRadius: '4px',
+                  fontSize: '14px',
+                  fontWeight: '500',
+                  border: 'none',
+                  cursor: 'pointer',
+                  transition: 'all 0.2s',
+                  backgroundColor: selectedFloor === floor ? '#2563eb' : '#e5e7eb',
+                  color: selectedFloor === floor ? 'white' : '#374151'
+                }}
+                onMouseEnter={(e) => {
+                  if (selectedFloor !== floor) {
+                    e.currentTarget.style.backgroundColor = '#d1d5db';
+                  }
+                }}
+                onMouseLeave={(e) => {
+                  if (selectedFloor !== floor) {
+                    e.currentTarget.style.backgroundColor = '#e5e7eb';
+                  }
+                }}
+              >
+                Tầng {floor}
+              </button>
+            ))}
+          </div>
+        </div>
+
+        {/* Status Filter */}
+        <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+          <span style={{ fontWeight: '600', color: '#374151', fontSize: '14px' }}>Trạng thái:</span>
+          <div style={{ display: 'flex', gap: '12px', flexWrap: 'wrap' }}>
+            {[
+              { status: 'empty' as TableStatus, label: 'Trống', color: '#22c55e' },
+              { status: 'serving' as TableStatus, label: 'Đang phục vụ', color: '#ef4444' },
+              { status: 'booked' as TableStatus, label: 'Đã đặt', color: '#eab308' },
+            ].map((item) => (
+              <button
+                key={item.status}
+                onClick={() => {
+                  if (selectedStatuses.includes(item.status)) {
+                    setSelectedStatuses(selectedStatuses.filter(s => s !== item.status));
+                  } else {
+                    setSelectedStatuses([...selectedStatuses, item.status]);
+                  }
+                }}
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '8px',
+                  padding: '6px 12px',
+                  borderRadius: '4px',
+                  fontSize: '14px',
+                  fontWeight: '500',
+                  border: 'none',
+                  cursor: 'pointer',
+                  transition: 'all 0.2s',
+                  backgroundColor: selectedStatuses.includes(item.status) ? '#e5e7eb' : '#f3f4f6',
+                  color: selectedStatuses.includes(item.status) ? '#1f2937' : '#9ca3af'
+                }}
+                onMouseEnter={(e) => {
+                  e.currentTarget.style.backgroundColor = '#e5e7eb';
+                  e.currentTarget.style.color = '#1f2937';
+                }}
+                onMouseLeave={(e) => {
+                  if (!selectedStatuses.includes(item.status)) {
+                    e.currentTarget.style.backgroundColor = '#f3f4f6';
+                    e.currentTarget.style.color = '#9ca3af';
+                  }
+                }}
+              >
+                <div style={{ width: '8px', height: '8px', borderRadius: '50%', backgroundColor: item.color }}></div>
+                {item.label}
+              </button>
+            ))}
           </div>
         </div>
       </div>
 
-      {/* Legend */}
-      <div className="max-w-7xl mx-auto px-6 py-6">
-        <div className="flex gap-6 mb-6">
-          <div className="flex items-center gap-2">
-            <div className="w-4 h-4 rounded bg-green-500"></div>
-            <span className="text-neutral-600">Trống</span>
+  {/* Main Content Area */}
+  <div style={{ flex: 1, overflowY: 'auto', padding: '24px', backgroundColor: '#eef2f6' }}>
+        {/* Floor Section Wrapper */}
+        <div style={{ maxWidth: '100%' }}>
+          {/* Floor Header */}
+          <div style={{ marginBottom: '24px', paddingBottom: '16px', borderBottom: '2px solid #52525b' }}>
+            <h2 style={{ fontSize: '20px', fontWeight: 'bold', color: '#e4e4e7', marginBottom: '16px' }}>
+              🏢 Tầng {selectedFloor}
+            </h2>
+            
+            {/* Legend */}
+            <div style={{ display: 'flex', gap: '32px', flexWrap: 'wrap', paddingLeft: '16px' }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <div style={{ width: '12px', height: '12px', borderRadius: '50%', backgroundColor: '#22c55e' }}></div>
+                <span style={{ fontSize: '13px', color: '#a1a1aa' }}>Trống</span>
+              </div>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <div style={{ width: '12px', height: '12px', borderRadius: '50%', backgroundColor: '#ef4444' }}></div>
+                <span style={{ fontSize: '13px', color: '#a1a1aa' }}>Đang phục vụ</span>
+              </div>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                <div style={{ width: '12px', height: '12px', borderRadius: '50%', backgroundColor: '#eab308' }}></div>
+                <span style={{ fontSize: '13px', color: '#a1a1aa' }}>Đã đặt</span>
+              </div>
+            </div>
           </div>
-          <div className="flex items-center gap-2">
-            <div className="w-4 h-4 rounded bg-red-500"></div>
-            <span className="text-neutral-600">Đang phục vụ</span>
-          </div>
-          <div className="flex items-center gap-2">
-            <div className="w-4 h-4 rounded bg-yellow-500"></div>
-            <span className="text-neutral-600">Đã đặt</span>
-          </div>
-        </div>
 
-        {/* Table Grid */}
-        {tables.length > 0 ? (
-          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
-            {tables.map((table) => {
-              const order = table.status === 'serving' ? orders.find(o => o.tableId === table.id) : null;
-              const orderStatus = order ? getOrderStatusInfo(order.status) : null;
+          {/* Table Grid - 4 columns fixed for 8 tables */}
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: '24px', padding: '16px' }}>
+            {floorTables.map((table, indexInFloor) => {
+                const rowNumber = Math.floor(indexInFloor / 4) + 1; // 1 or 2
+                const order = table.status === 'serving' ? orders.find(o => o.tableId === table.id) : null;
+                
+                let borderColor = '#22c55e'; // green
+                if (table.status === 'serving') {
+                  borderColor = '#ef4444'; // red
+                }
+                if (table.status === 'booked') {
+                  borderColor = '#eab308'; // yellow
+                }
 
-              return (
-                <Card
-                  key={table.id}
-                  className={`${getTableStatusColor(table.status)} border-2 cursor-pointer transition-all hover:shadow-lg relative overflow-hidden`}
-                  onClick={() => handleTableAction(table)}
-                >
-                  <div className="p-6">
-                    <div className={`absolute top-3 right-3 w-3 h-3 rounded-full ${getTableStatusBadge(table.status)}`}></div>
-                    
-                    <div className="mb-4">
-                      <h2>Bàn {table.id}</h2>
-                      <p className="text-neutral-600 capitalize mt-1">{table.status === 'empty' ? 'Trống' : table.status === 'serving' ? 'Đang phục vụ' : 'Đã đặt'}</p>
+                const seats = table.maxSeats ?? 4;
+
+                return (
+                  <div
+                    key={table.id}
+                    onClick={() => handleTableAction(table)}
+                    style={{ 
+                      display: 'flex', 
+                      justifyContent: 'center', 
+                      alignItems: 'center', 
+                      cursor: 'pointer', 
+                      position: 'relative', 
+                      height: '180px',
+                      perspective: '1000px',
+                      marginTop: rowNumber === 2 ? '20px' : '0' // push second row down to avoid overlap
+                    }}
+                    onMouseEnter={(e) => {
+                      const inner = e.currentTarget.querySelector('[data-inner]') as HTMLElement;
+                      if (inner) {
+                        inner.style.boxShadow = '0 25px 50px -12px rgba(0, 0, 0, 0.5)';
+                        inner.style.transform = 'scale(1.08) translateY(-4px)';
+                      }
+                    }}
+                    onMouseLeave={(e) => {
+                      const inner = e.currentTarget.querySelector('[data-inner]') as HTMLElement;
+                      if (inner) {
+                        inner.style.boxShadow = '0 10px 25px -5px rgba(0, 0, 0, 0.3)';
+                        inner.style.transform = 'scale(1) translateY(0)';
+                      }
+                    }}
+                  >
+                    {/* Decorative outer glow */}
+                    <div style={{
+                      position: 'absolute',
+                      width: '170px',
+                      height: '170px',
+                      borderRadius: '50%',
+                      border: `2px solid ${borderColor}`,
+                      opacity: 0.3,
+                      animation: 'pulse 2s infinite'
+                    }}></div>
+
+                    {/* Outer Circle - Status Border */}
+                    <div style={{
+                      position: 'absolute',
+                      width: '160px',
+                      height: '160px',
+                      borderRadius: '50%',
+                      border: `5px solid ${borderColor}`,
+                      opacity: 0.9,
+                      boxShadow: `inset 0 0 20px ${borderColor}33`
+                    }}></div>
+
+                    {/* Inner Circle - White content area */}
+                    <div
+                      data-inner
+                      style={{
+                        position: 'absolute',
+                        width: '145px',
+                        height: '145px',
+                        borderRadius: '50%',
+                        backgroundColor: '#fafafa',
+                        border: '2px solid #e5e7eb',
+                        display: 'flex',
+                        flexDirection: 'column',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                        boxShadow: '0 10px 25px -5px rgba(0, 0, 0, 0.3)',
+                        transition: 'all 0.3s ease',
+                        zIndex: 10,
+                        backgroundImage: 'radial-gradient(circle at 30% 30%, rgba(255,255,255,0.8) 0%, transparent 50%)'
+                      }}
+                    >
+                      {/* Table ID - Large */}
+                      <div style={{ fontSize: '36px', fontWeight: 'bold', color: '#2563eb', marginBottom: '4px', lineHeight: '1' }}>
+                        {table.id}
+                      </div>
+
+                      {/* Seat squares positioned around the table (based on maxSeats: 2,4,6) */}
+                      {Array.from({ length: seats }).map((_, i) => {
+                        const angle = (360 / seats) * i - 90; // start from top
+                        const rad = (angle * Math.PI) / 180;
+                        const baseRadius = 96; // px distance from center to place seat squares (moved out slightly)
+                        // Shift lower seats down a bit for clarity
+                        const lowerShift = Math.sin(rad) > 0 ? 12 : 0;
+                        const x = Math.cos(rad) * baseRadius;
+                        const y = Math.sin(rad) * baseRadius + lowerShift;
+                        return (
+                          <div
+                            key={i}
+                            style={{
+                              position: 'absolute',
+                              left: `calc(50% + ${x}px)`,
+                              top: `calc(50% + ${y}px)`,
+                              transform: 'translate(-50%, -50%)',
+                              width: '18px',
+                              height: '18px',
+                              backgroundColor: '#08213a', // dark blue-black
+                              borderRadius: '4px',
+                              zIndex: 20,
+                              border: '1px solid rgba(255,255,255,0.06)'
+                            }}
+                          />
+                        );
+                      })}
+
+                      {/* Status/Info Text */}
+                      {table.status === 'serving' && (
+                        <div style={{ fontSize: '11px', color: '#ef4444', fontWeight: '600', textAlign: 'center' }}>
+                          {table.customerCount}👥
+                        </div>
+                      )}
+                      {table.status === 'booked' && (
+                        <div style={{ fontSize: '10px', color: '#eab308', fontWeight: '600', textAlign: 'center', maxWidth: '100%', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                          {table.bookingName}
+                        </div>
+                      )}
+                      {table.status === 'empty' && (
+                        <div style={{ fontSize: '11px', color: '#22c55e', fontWeight: '600' }}>
+                          ✓ Trống
+                        </div>
+                      )}
                     </div>
 
-                    {table.status === 'empty' && (
-                      <p className="text-neutral-500">Nhấn để mở bàn</p>
-                    )}
-
-                    {table.status === 'serving' && (
-                      <div className="space-y-2">
-                        <div className="flex items-center gap-2 text-neutral-700">
-                          <Users className="w-4 h-4" />
-                          <span>{table.customerCount} khách</span>
-                        </div>
-                        <div className="flex items-center gap-2 text-neutral-700">
-                          <Clock className="w-4 h-4" />
-                          <span>{table.timeElapsed}</span>
-                        </div>
-                        {orderStatus && (
-                          <div className="flex items-center gap-2 text-neutral-700 pt-1">
-                            <ShoppingBasket className="w-4 h-4" />
-                            <Badge variant={orderStatus.variant}>{orderStatus.text}</Badge>
-                          </div>
-                        )}
-                      </div>
-                    )}
-
-                    {table.status === 'booked' && (
-                      <div className="space-y-2">
-                        <div className="flex items-center gap-2 text-neutral-700">
-                          <Calendar className="w-4 h-4" />
-                          <span>{table.bookingTime}</span>
-                        </div>
-                        <p className="text-neutral-700">{table.bookingName}</p>
-                      </div>
-                    )}
+                    {/* (Removed the outside numeric square - seats are shown as small squares around the circle) */}
                   </div>
-                </Card>
-              );
-            })}
+                );
+              })}
           </div>
-        ) : (
-          <Card className="mt-6 p-12 text-center">
-            <p className="text-neutral-500">Chưa có bàn trong hệ thống</p>
-          </Card>
-        )}
+
+          {/* Empty state */}
+          {tables.filter(table => {
+            const tablesPerFloor = 8;
+            const floorStart = (selectedFloor - 1) * tablesPerFloor + 1;
+            const floorEnd = selectedFloor * tablesPerFloor;
+            return table.id >= floorStart && table.id <= floorEnd && selectedStatuses.includes(table.status);
+          }).length === 0 && (
+            <div style={{ textAlign: 'center', padding: '48px 24px', color: '#71717a' }}>
+              <div style={{ fontSize: '48px', marginBottom: '12px' }}>📭</div>
+              <div style={{ fontSize: '14px' }}>Không có bàn nào phù hợp với bộ lọc</div>
+            </div>
+          )}
+        </div>
+
+        {/* CSS Animation */}
+        <style>{`
+          @keyframes pulse {
+            0%, 100% {
+              opacity: 0.3;
+            }
+            50% {
+              opacity: 0.6;
+            }
+          }
+        `}</style>
       </div>
+
+      {/* Settings Modal */}
+      {isSettingModalOpen && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-lg shadow-2xl p-6 w-96 max-h-96 overflow-y-auto">
+            <div className="flex items-center justify-between mb-6">
+              <h2 className="text-xl font-bold text-blue-600">Thiết kế sơ đồ</h2>
+              <button
+                onClick={() => setSettingModalOpen(false)}
+                className="text-gray-400 hover:text-gray-600 text-2xl font-light"
+              >
+                ×
+              </button>
+            </div>
+            <div className="space-y-2">
+              <Button variant="outline" className="w-full justify-start text-gray-700 hover:bg-blue-50 hover:border-blue-300 h-10">
+                Thêm phòng
+              </Button>
+              <Button variant="outline" className="w-full justify-start text-gray-700 hover:bg-blue-50 hover:border-blue-300 h-10">
+                Thiết lập nhanh sơ đồ
+              </Button>
+              <Button variant="outline" className="w-full justify-start text-gray-700 hover:bg-blue-50 hover:border-blue-300 h-10">
+                Thêm bàn
+              </Button>
+              <Button variant="outline" className="w-full justify-start text-gray-700 hover:bg-blue-50 hover:border-blue-300 h-10">
+                Chọn ảnh nền
+              </Button>
+              <Button variant="outline" className="w-full justify-start text-gray-700 hover:bg-blue-50 hover:border-blue-300 h-10">
+                Bố ảnh bàn
+              </Button>
+              <Button variant="outline" className="w-full justify-start text-gray-700 hover:bg-blue-50 hover:border-blue-300 h-10">
+                Đổi màu bàn
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
       
       {selectedTable && (
         <>

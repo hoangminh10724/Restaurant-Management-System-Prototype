@@ -3,19 +3,18 @@ import { Button } from './ui/button';
 import { Input } from './ui/input';
 import { Label } from './ui/label';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from './ui/card';
-import { UtensilsCrossed, Calendar, AlertCircle } from 'lucide-react';
+import { UtensilsCrossed, AlertCircle } from 'lucide-react';
 import { Staff } from '../App'; // Assuming Staff type is exported from App.tsx
 
 interface LoginScreenProps {
   onLogin: (user: Staff) => void;
   staff: Staff[];
-  onNavigate: (screen: 'online-booking' | 'customer-payment') => void;
 }
 
 // Mock password for prototype purposes. In a real app, this would be handled by a secure backend.
 const MOCK_PASSWORD = "password123";
 
-export default function LoginScreen({ onLogin, staff, onNavigate }: LoginScreenProps) {
+export default function LoginScreen({ onLogin, staff }: LoginScreenProps) {
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState<string | null>(null);
@@ -87,7 +86,6 @@ export default function LoginScreen({ onLogin, staff, onNavigate }: LoginScreenP
                 onChange={(e) => setPassword(e.target.value)}
                 required
               />
-               <p className="text-xs text-neutral-500">Gợi ý: Dùng bất kỳ username nào và mật khẩu "password123"</p>
             </div>
             
             {error && (
@@ -101,16 +99,6 @@ export default function LoginScreen({ onLogin, staff, onNavigate }: LoginScreenP
               Đăng nhập
             </Button>
           </form>
-          
-          <div className="mt-6 pt-6 border-t">
-            <p className="text-center text-sm text-neutral-600 mb-3">Dành cho khách hàng</p>
-            <div className="grid grid-cols-1 gap-3">
-              <Button variant="outline" className="w-full" onClick={() => onNavigate('online-booking')}>
-                <Calendar className="w-4 h-4 mr-2" />
-                Đặt bàn Online
-              </Button>
-            </div>
-          </div>
         </CardContent>
       </Card>
     </div>
