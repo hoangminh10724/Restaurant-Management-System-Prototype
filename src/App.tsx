@@ -84,6 +84,7 @@ export interface Booking {
   tableId?: number;
   status: 'pending' | 'confirmed' | 'cancelled' | 'completed';
   notes?: string;
+  eventType?: string;
   createdAt: string;
 }
 

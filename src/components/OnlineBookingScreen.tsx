@@ -14,7 +14,7 @@ import {
   DialogDescription,
   DialogFooter,
   DialogClose,
-  DialogTrigger,
+  
 } from './ui/dialog';
 
 interface OnlineBookingScreenProps {
@@ -41,7 +41,6 @@ export default function OnlineBookingScreen({ tables, onBookingCreate, onNavigat
   const [suggestedTables, setSuggestedTables] = useState<Table[]>([]);
   const [selectedTableId, setSelectedTableId] = useState<number | null>(null);
   const [isTableDialogOpen, setIsTableDialogOpen] = useState(false);
-  const [pendingTableId, setPendingTableId] = useState<number | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [submitted, setSubmitted] = useState(false);
 
@@ -67,14 +66,13 @@ export default function OnlineBookingScreen({ tables, onBookingCreate, onNavigat
   };
 
   const openTableDialog = (tableId: number) => {
-    setPendingTableId(tableId);
+    
     setIsTableDialogOpen(true);
   };
 
   const confirmTableSelection = (tableId: number) => {
     setSelectedTableId(tableId);
     setIsTableDialogOpen(false);
-    setPendingTableId(null);
   };
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -93,7 +91,7 @@ export default function OnlineBookingScreen({ tables, onBookingCreate, onNavigat
       tableId: selectedTableId,
       status: 'confirmed', // Online bookings are auto-confirmed
       notes: formData.notes,
-      setup: formData.eventType,
+      eventType: formData.eventType,
     });
     
     setSubmitted(true);
@@ -101,34 +99,44 @@ export default function OnlineBookingScreen({ tables, onBookingCreate, onNavigat
 
   if (submitted) {
     return (
-      <div
-        className="min-h-screen flex items-center justify-center p-4"
-        style={{
-          backgroundImage: "url('/Background/service.jpg')",
-          backgroundSize: 'cover',
-          backgroundPosition: 'center',
-          backgroundRepeat: 'no-repeat',
-        }}
-      >
-        <Card className="w-full max-w-md text-center p-8">
-          <div className="mx-auto w-20 h-20 bg-green-100 rounded-full flex items-center justify-center mb-6">
-            <CheckCircle className="w-12 h-12 text-green-600" />
-          </div>
-          <h1 className="mb-3">Đặt bàn thành công!</h1>
-          <p className="text-neutral-600 mb-6">
-            Cảm ơn bạn đã đặt bàn tại nhà hàng chúng tôi. Thông tin chi tiết:
-          </p>
-          <div className="bg-neutral-50 rounded-lg p-4 mb-6 text-left">
-            <p><strong>Tên:</strong> {formData.customerName}</p>
-            <p><strong>SĐT:</strong> {formData.customerPhone}</p>
-            <p><strong>Thời gian:</strong> {formData.time}, {formData.date}</p>
-            <p><strong>Số khách:</strong> {formData.guests} người</p>
-            <p><strong>Bàn số:</strong> {selectedTableId}</p>
-            {formData.eventType && <p><strong>Sự kiện:</strong> {formData.eventType}</p>}
-            {formData.notes && <p><strong>Ghi chú:</strong> {formData.notes}</p>}
-          </div>
-          <p className="text-sm text-neutral-500">Sử dụng thanh header phía trên để quay về trang chính.</p>
-        </Card>
+      <div className="min-h-screen" style={{ display: 'flex', flexDirection: 'column' }}>
+        <HeaderBar
+          user={user ?? null}
+          onNavigateToTableMap={onNavigateToTableMap}
+          onNavigateToKitchen={onNavigateToKitchen}
+          onNavigateToOnlineBooking={() => {}}
+          onNavigateToManagement={onNavigateToManagement}
+          onLogout={onLogout}
+        />
+        <div
+          className="flex-1 flex items-center justify-center p-4"
+          style={{
+            backgroundImage: "url('/Background/service.jpg')",
+            backgroundSize: 'cover',
+            backgroundPosition: 'center',
+            backgroundRepeat: 'no-repeat',
+          }}
+        >
+          <Card className="w-full max-w-md text-center p-8">
+            <div className="mx-auto w-20 h-20 bg-green-100 rounded-full flex items-center justify-center mb-6">
+              <CheckCircle className="w-12 h-12 text-green-600" />
+            </div>
+            <h1 className="mb-3">Đặt bàn thành công!</h1>
+            <p className="text-neutral-600 mb-6">
+              Cảm ơn bạn đã đặt bàn tại nhà hàng chúng tôi. Thông tin chi tiết:
+            </p>
+            <div className="bg-neutral-50 rounded-lg p-4 mb-6 text-left">
+              <p><strong>Tên:</strong> {formData.customerName}</p>
+              <p><strong>SĐT:</strong> {formData.customerPhone}</p>
+              <p><strong>Thời gian:</strong> {formData.time}, {formData.date}</p>
+              <p><strong>Số khách:</strong> {formData.guests} người</p>
+              <p><strong>Bàn số:</strong> {selectedTableId}</p>
+              {formData.eventType && <p><strong>Sự kiện:</strong> {formData.eventType}</p>}
+              {formData.notes && <p><strong>Ghi chú:</strong> {formData.notes}</p>}
+            </div>
+            <p className="text-sm text-neutral-500">Sử dụng thanh header phía trên để quay về trang chính.</p>
+          </Card>
+        </div>
       </div>
     );
   }
@@ -208,8 +216,10 @@ export default function OnlineBookingScreen({ tables, onBookingCreate, onNavigat
                       {suggestedTables.map(table => (
                         <Button
                           key={table.id}
-                          variant={selectedTableId === table.id ? 'default' : 'outline'}
-                          className={selectedTableId === table.id ? 'bg-yellow-300 text-black border-yellow-300 hover:bg-yellow-300' : ''}
+                          variant="outline"
+                          className={selectedTableId === table.id ? '!bg-blue-600 !text-white !border-black hover:!bg-blue-700 px-3 py-2 whitespace-nowrap text-sm' : 'px-3 py-2 whitespace-nowrap text-sm'}
+                          style={selectedTableId === table.id ? { backgroundColor: '#2563eb', color: '#ffffff', borderColor: '#000000' } : undefined}
+                          data-selected={selectedTableId === table.id}
                           onClick={() => openTableDialog(table.id)}
                         >
                           Bàn {table.id}
@@ -235,7 +245,14 @@ export default function OnlineBookingScreen({ tables, onBookingCreate, onNavigat
                       <DialogDescription>Chọn bàn bạn muốn đặt (bấm vào số để xác nhận).</DialogDescription>
                       <div className="mt-4 grid grid-cols-4 gap-2">
                         {suggestedTables.map(t => (
-                          <Button key={t.id} className={selectedTableId === t.id ? 'bg-yellow-300 text-black border-yellow-300' : ''} onClick={() => confirmTableSelection(t.id)}>
+                          <Button
+                            key={t.id}
+                            variant="outline"
+                            className={selectedTableId === t.id ? '!bg-blue-600 !text-white !border-black hover:!bg-blue-700 px-3 py-2 whitespace-nowrap text-sm' : 'px-3 py-2 whitespace-nowrap text-sm'}
+                            style={selectedTableId === t.id ? { backgroundColor: '#2563eb', color: '#ffffff', borderColor: '#000000' } : undefined}
+                            data-selected={selectedTableId === t.id}
+                            onClick={() => confirmTableSelection(t.id)}
+                          >
                             Bàn {t.id}
                           </Button>
                         ))}
