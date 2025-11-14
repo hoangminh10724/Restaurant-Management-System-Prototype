@@ -32,6 +32,7 @@ export interface Table {
   bookingPhone?: string;
   bookingId?: string;
   maxSeats?: number;
+  bookingNotes?: string;
 }
 
 export interface MenuItem {
@@ -319,6 +320,22 @@ function App() {
     setCurrentScreen('order');
   };
 
+  const handleSaveBookingNotes = (tableId: number, notes: string) => {
+    setTables(tables.map(t => 
+      t.id === tableId 
+        ? { ...t, bookingNotes: notes }
+        : t
+    ));
+  };
+
+  const handleUpdateBookingInfo = (tableId: number, name: string, phone: string, time: string) => {
+    setTables(tables.map(t => 
+      t.id === tableId 
+        ? { ...t, bookingName: name, bookingPhone: phone, bookingTime: time }
+        : t
+    ));
+  };
+
   const handleTableClick = (tableId: number, action: 'view' | 'payment') => {
     setSelectedTable(tableId);
     if (action === 'view') {
@@ -537,6 +554,8 @@ function App() {
           onNavigateToOnlineBooking={() => setCurrentScreen('online-booking')}
           onLogout={handleLogout}
           onNavigateToManagement={() => setCurrentScreen('management')}
+          onSaveBookingNotes={handleSaveBookingNotes}
+          onUpdateBookingInfo={handleUpdateBookingInfo}
           user={loggedInUser}
         />
       )}

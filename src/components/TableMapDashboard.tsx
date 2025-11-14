@@ -20,10 +20,12 @@ interface TableMapDashboardProps {
   onNavigateToOnlineBooking?: () => void;
   onLogout?: () => void;
   onNavigateToManagement?: () => void;
+  onSaveBookingNotes?: (tableId: number, notes: string) => void;
+  onUpdateBookingInfo?: (tableId: number, name: string, phone: string, time: string) => void;
   user: Staff;
 }
 
-export default function TableMapDashboard({ tables, orders, onTableClick, onOpenTable, onTransferTable, onNavigateToKitchen, onNavigateToOnlineBooking, onLogout, onNavigateToManagement, user }: TableMapDashboardProps) {
+export default function TableMapDashboard({ tables, orders, onTableClick, onOpenTable, onTransferTable, onNavigateToKitchen, onNavigateToOnlineBooking, onLogout, onNavigateToManagement, onSaveBookingNotes, onUpdateBookingInfo, user }: TableMapDashboardProps) {
   const [isGuestPopupOpen, setGuestPopupOpen] = useState(false);
   const [isActionsPopupOpen, setActionsPopupOpen] = useState(false);
   const [isTransferDialogOpen, setTransferDialogOpen] = useState(false);
@@ -481,6 +483,23 @@ export default function TableMapDashboard({ tables, orders, onTableClick, onOpen
             onClose={() => setBookingInfoOpen(false)}
             table={selectedTable}
             onConfirmArrival={handleConfirmBookingArrival}
+            onSaveNotes={(notes) => {
+              if (selectedTable && onSaveBookingNotes) {
+                onSaveBookingNotes(selectedTable.id, notes);
+              }
+            }}
+            onUpdateBookingInfo={(name, phone, time) => {
+              if (selectedTable && onUpdateBookingInfo) {
+                onUpdateBookingInfo(selectedTable.id, name, phone, time);
+                // Cập nhật selectedTable cục bộ để UI phản ánh ngay
+                setSelectedTable({
+                  ...selectedTable,
+                  bookingName: name,
+                  bookingPhone: phone,
+                  bookingTime: time
+                });
+              }
+            }}
           />
         </>
       )}
