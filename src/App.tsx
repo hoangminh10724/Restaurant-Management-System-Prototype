@@ -320,18 +320,15 @@ function App() {
     setCurrentScreen('order');
   };
 
-  const handleSaveBookingNotes = (tableId: number, notes: string) => {
+  const handleUpdateBookingDetails = (tableId: number, details: { name: string, phone: string, time: string, notes: string }) => {
     setTables(tables.map(t => 
       t.id === tableId 
-        ? { ...t, bookingNotes: notes }
-        : t
-    ));
-  };
-
-  const handleUpdateBookingInfo = (tableId: number, name: string, phone: string, time: string) => {
-    setTables(tables.map(t => 
-      t.id === tableId 
-        ? { ...t, bookingName: name, bookingPhone: phone, bookingTime: time }
+        ? { ...t, 
+            bookingName: details.name, 
+            bookingPhone: details.phone, 
+            bookingTime: details.time,
+            bookingNotes: details.notes
+          }
         : t
     ));
   };
@@ -554,8 +551,7 @@ function App() {
           onNavigateToOnlineBooking={() => setCurrentScreen('online-booking')}
           onLogout={handleLogout}
           onNavigateToManagement={() => setCurrentScreen('management')}
-          onSaveBookingNotes={handleSaveBookingNotes}
-          onUpdateBookingInfo={handleUpdateBookingInfo}
+          onUpdateBookingDetails={handleUpdateBookingDetails}
           user={loggedInUser}
         />
       )}

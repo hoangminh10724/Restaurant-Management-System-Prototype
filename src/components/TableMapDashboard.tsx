@@ -20,12 +20,11 @@ interface TableMapDashboardProps {
   onNavigateToOnlineBooking?: () => void;
   onLogout?: () => void;
   onNavigateToManagement?: () => void;
-  onSaveBookingNotes?: (tableId: number, notes: string) => void;
-  onUpdateBookingInfo?: (tableId: number, name: string, phone: string, time: string) => void;
+  onUpdateBookingDetails?: (tableId: number, details: { name: string, phone: string, time: string, notes: string }) => void;
   user: Staff;
 }
 
-export default function TableMapDashboard({ tables, orders, onTableClick, onOpenTable, onTransferTable, onNavigateToKitchen, onNavigateToOnlineBooking, onLogout, onNavigateToManagement, onSaveBookingNotes, onUpdateBookingInfo, user }: TableMapDashboardProps) {
+export default function TableMapDashboard({ tables, orders, onTableClick, onOpenTable, onTransferTable, onNavigateToKitchen, onNavigateToOnlineBooking, onLogout, onNavigateToManagement, onUpdateBookingDetails, user }: TableMapDashboardProps) {
   const [isGuestPopupOpen, setGuestPopupOpen] = useState(false);
   const [isActionsPopupOpen, setActionsPopupOpen] = useState(false);
   const [isTransferDialogOpen, setTransferDialogOpen] = useState(false);
@@ -483,20 +482,16 @@ export default function TableMapDashboard({ tables, orders, onTableClick, onOpen
             onClose={() => setBookingInfoOpen(false)}
             table={selectedTable}
             onConfirmArrival={handleConfirmBookingArrival}
-            onSaveNotes={(notes) => {
-              if (selectedTable && onSaveBookingNotes) {
-                onSaveBookingNotes(selectedTable.id, notes);
-              }
-            }}
-            onUpdateBookingInfo={(name, phone, time) => {
-              if (selectedTable && onUpdateBookingInfo) {
-                onUpdateBookingInfo(selectedTable.id, name, phone, time);
+            onSave={(details) => {
+              if (selectedTable && onUpdateBookingDetails) {
+                onUpdateBookingDetails(selectedTable.id, details);
                 // Cập nhật selectedTable cục bộ để UI phản ánh ngay
                 setSelectedTable({
                   ...selectedTable,
-                  bookingName: name,
-                  bookingPhone: phone,
-                  bookingTime: time
+                  bookingName: details.name,
+                  bookingPhone: details.phone,
+                  bookingTime: details.time,
+                  bookingNotes: details.notes
                 });
               }
             }}

@@ -17,11 +17,10 @@ interface BookingInfoPopupProps {
   onClose: () => void;
   onConfirmArrival: () => void;
   table: Table | null;
-  onSaveNotes?: (notes: string) => void;
-  onUpdateBookingInfo?: (name: string, phone: string, time: string) => void;
+  onSave?: (details: { name: string, phone: string, time: string, notes: string }) => void;
 }
 
-export default function BookingInfoPopup({ isOpen, onClose, onConfirmArrival, table, onSaveNotes, onUpdateBookingInfo }: BookingInfoPopupProps) {
+export default function BookingInfoPopup({ isOpen, onClose, onConfirmArrival, table, onSave }: BookingInfoPopupProps) {
   const [name, setName] = useState('');
   const [phone, setPhone] = useState('');
   const [time, setTime] = useState('');
@@ -41,11 +40,8 @@ export default function BookingInfoPopup({ isOpen, onClose, onConfirmArrival, ta
   if (!table) return null;
 
   const handleSave = () => {
-    if (onUpdateBookingInfo) {
-      onUpdateBookingInfo(name, phone, time);
-    }
-    if (onSaveNotes) {
-      onSaveNotes(notes);
+    if (onSave) {
+      onSave({ name, phone, time, notes });
     }
     setIsEditing(false);
   };
