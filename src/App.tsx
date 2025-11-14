@@ -554,7 +554,10 @@ function App() {
           orders={orders}
           onStatusUpdate={handleOrderStatusUpdate}
           onLogout={handleLogout}
-          userRole={userRole as Role}
+          onNavigateToTableMap={() => setCurrentScreen('dashboard')}
+          onNavigateToOnlineBooking={() => setCurrentScreen('online-booking')}
+          onNavigateToManagement={() => setCurrentScreen('management')}
+          user={loggedInUser}
         />
       )}
       {currentScreen === 'payment' && selectedTable && currentOrder && loggedInUser && (
@@ -596,7 +599,11 @@ function App() {
         <OnlineBookingScreen
           tables={tables}
           onBookingCreate={handleBookingCreate}
-          onBack={() => setCurrentScreen('login')}
+          onNavigateToTableMap={() => loggedInUser ? setCurrentScreen('dashboard') : setCurrentScreen('login')}
+          onNavigateToKitchen={() => loggedInUser ? setCurrentScreen('kitchen') : setCurrentScreen('login')}
+          onNavigateToManagement={() => loggedInUser ? setCurrentScreen('management') : setCurrentScreen('login')}
+          onLogout={handleLogout}
+          user={loggedInUser}
         />
       )}
       {currentScreen === 'offline-booking' && loggedInUser && (

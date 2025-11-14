@@ -1,4 +1,5 @@
-import { Order, Role } from '../App';
+import { Order, Staff } from '../App';
+import HeaderBar from './HeaderBar';
 import { Button } from './ui/button';
 import { Card } from './ui/card';
 import { Badge } from './ui/badge';
@@ -8,10 +9,13 @@ interface KitchenDisplayScreenProps {
   orders: Order[];
   onStatusUpdate: (tableId: number, status: Order['status']) => void;
   onLogout: () => void;
-  userRole: Role;
+  onNavigateToTableMap?: () => void;
+  onNavigateToOnlineBooking?: () => void;
+  onNavigateToManagement?: () => void;
+  user?: Staff | null;
 }
 
-export default function KitchenDisplayScreen({ orders, onStatusUpdate, onLogout, userRole }: KitchenDisplayScreenProps) {
+export default function KitchenDisplayScreen({ orders, onStatusUpdate, onLogout, onNavigateToTableMap, onNavigateToOnlineBooking, onNavigateToManagement, user }: KitchenDisplayScreenProps) {
   const getStatusColor = (status: Order['status']) => {
     switch (status) {
       case 'pending':
@@ -61,24 +65,14 @@ export default function KitchenDisplayScreen({ orders, onStatusUpdate, onLogout,
         backgroundRepeat: 'no-repeat',
       }}
     >
-      {/* Header */}
-      <div className="bg-white border-b px-6 py-4">
-        <div className="flex items-center justify-between max-w-7xl mx-auto">
-          <div className="flex items-center gap-3">
-            <div className="w-12 h-12 bg-orange-500 rounded-full flex items-center justify-center">
-              <ChefHat className="w-6 h-6 text-white" />
-            </div>
-            <div>
-              <h1>Hệ thống hiển thị bếp</h1>
-              <p className="text-neutral-500 mt-1">Các order đang hoạt động cho {userRole}</p>
-            </div>
-          </div>
-          <Button variant="outline" onClick={onLogout}>
-            <LogOut className="w-4 h-4 mr-2" />
-            Đăng xuất
-          </Button>
-        </div>
-      </div>
+      <HeaderBar
+        user={user ?? null}
+        onNavigateToTableMap={onNavigateToTableMap}
+        onNavigateToKitchen={() => {}}
+        onNavigateToOnlineBooking={onNavigateToOnlineBooking}
+        onNavigateToManagement={onNavigateToManagement}
+        onLogout={onLogout}
+      />
 
       {/* Orders Grid */}
       <div className="max-w-7xl mx-auto px-6 py-6">

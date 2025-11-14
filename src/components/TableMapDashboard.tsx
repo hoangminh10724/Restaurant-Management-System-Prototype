@@ -4,6 +4,7 @@ import { Button } from './ui/button';
 import { Card } from './ui/card';
 import { Badge } from './ui/badge';
 import { Users, Clock, Calendar, ChefHat, LogOut, UserCog, ShoppingBasket, MapPin, Bell, Search, Settings } from 'lucide-react';
+import HeaderBar from './HeaderBar';
 import GuestCountPopup from './GuestCountPopup';
 import TableActionsPopup from './TableActionsPopup';
 import TransferTableDialog from './TransferTableDialog';
@@ -108,74 +109,14 @@ export default function TableMapDashboard({ tables, orders, onTableClick, onOpen
 
   return (
     <div style={{ minHeight: '100vh', backgroundColor: '#eef2f6', display: 'flex', flexDirection: 'column' }}>
-      {/* Taskbar Header - Blue */}
-      <div style={{ backgroundColor: '#2563eb', padding: '16px 24px', borderBottom: '1px solid #1e40af', boxShadow: '0 1px 3px rgba(0,0,0,0.1)' }}>
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '12px' }}>
-          {/* Left Section - Navigation Buttons */}
-          <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-            <button style={{ display: 'flex', alignItems: 'center', gap: '8px', color: 'white', padding: '8px 12px', borderRadius: '4px', backgroundColor: 'transparent', border: 'none', cursor: 'pointer', fontSize: '14px', fontWeight: '500' }} onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#1d4ed8'} onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'transparent'}>
-              <MapPin size={20} />
-              <span>Sơ đồ</span>
-            </button>
-            <button onClick={onNavigateToKitchen} style={{ display: 'flex', alignItems: 'center', gap: '8px', color: 'white', padding: '8px 12px', borderRadius: '4px', backgroundColor: 'transparent', border: 'none', cursor: 'pointer', fontSize: '14px', fontWeight: '500' }} onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#1d4ed8'} onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'transparent'}>
-              <ChefHat size={20} />
-              <span>Bếp</span>
-            </button>
-            <button onClick={onNavigateToOnlineBooking} style={{ display: 'flex', alignItems: 'center', gap: '8px', color: 'white', padding: '8px 12px', borderRadius: '4px', backgroundColor: 'transparent', border: 'none', cursor: 'pointer', fontSize: '14px', fontWeight: '500' }} onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#1d4ed8'} onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'transparent'}>
-              <Calendar size={20} />
-              <span>Đặt bàn Online</span>
-            </button>
-          </div>
-
-          {/* Right Section - Search Bar, Notification & Settings */}
-          <div style={{ display: 'flex', alignItems: 'center', gap: '16px', marginLeft: 'auto' }}>
-            {/* Search Bar */}
-            <div style={{ position: 'relative', width: '256px' }}>
-              <Search size={18} style={{ position: 'absolute', left: '12px', top: '50%', transform: 'translateY(-50%)', color: '#d1d5db' }} />
-              <input
-                type="text"
-                placeholder="Tìm kiếm bàn..."
-                style={{ width: '100%', paddingLeft: '40px', paddingRight: '16px', paddingTop: '8px', paddingBottom: '8px', backgroundColor: '#3b82f6', color: 'white', border: 'none', borderRadius: '4px', fontSize: '14px', outline: 'none' }}
-              />
-            </div>
-
-            {/* Notification Bell */}
-            <button style={{ position: 'relative', color: 'white', padding: '8px', backgroundColor: 'transparent', border: 'none', cursor: 'pointer', borderRadius: '4px' }} onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#1d4ed8'} onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'transparent'}>
-              <Bell size={20} />
-              <span style={{ position: 'absolute', top: '4px', right: '4px', width: '8px', height: '8px', backgroundColor: '#f87171', borderRadius: '50%' }}></span>
-            </button>
-
-            {/* Settings Gear */}
-            <button 
-              onClick={() => setSettingModalOpen(true)}
-              style={{ color: 'white', padding: '8px', backgroundColor: 'transparent', border: 'none', cursor: 'pointer', borderRadius: '4px', fontSize: '14px' }}
-              onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#1d4ed8'} 
-              onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'transparent'}
-            >
-              ⚙️
-            </button>
-            
-            {/* Admin Button */}
-            {(user.role === 'Admin' || user.role === 'Quản lý') && onNavigateToManagement && (
-              <button onClick={onNavigateToManagement} style={{ display: 'flex', alignItems: 'center', gap: '8px', color: 'white', padding: '8px 12px', borderRadius: '4px', backgroundColor: 'transparent', border: 'none', cursor: 'pointer', fontSize: '14px', fontWeight: '500' }} onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#1d4ed8'} onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'transparent'}>
-                <UserCog size={20} />
-                <span>Quản lý</span>
-              </button>
-            )}
-            
-            {/* Logout Button */}
-            <button onClick={onLogout} style={{ display: 'flex', alignItems: 'center', gap: '8px', color: 'white', padding: '8px 12px', borderRadius: '4px', backgroundColor: 'transparent', border: '1px solid #3b82f6', cursor: 'pointer', fontSize: '14px', fontWeight: '500', marginLeft: '8px' }} onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#1d4ed8'} onMouseLeave={(e) => e.currentTarget.style.backgroundColor = 'transparent'}>
-              <LogOut size={20} />
-              <span>Đăng xuất</span>
-            </button>
-          </div>
-        </div>
-
-        {/* User Info */}
-        <div style={{ paddingLeft: '24px', paddingRight: '24px', paddingTop: '8px', paddingBottom: '8px', backgroundColor: '#1e3a8a', fontSize: '12px', color: '#dbeafe', borderTop: '1px solid #1e40af', marginTop: '12px' }}>
-          Xin chào, <span style={{ fontWeight: 'bold' }}>{user.name}</span> ({user.role})
-        </div>
-      </div>
+      <HeaderBar
+        user={user}
+        onNavigateToTableMap={() => {}}
+        onNavigateToKitchen={onNavigateToKitchen}
+        onNavigateToOnlineBooking={onNavigateToOnlineBooking}
+        onNavigateToManagement={onNavigateToManagement}
+        onLogout={onLogout}
+      />
 
       {/* Filter Section */}
       <div style={{ backgroundColor: 'white', borderBottom: '1px solid #e5e7eb', padding: '12px 24px', display: 'flex', alignItems: 'center', gap: '32px', flexWrap: 'wrap' }}>

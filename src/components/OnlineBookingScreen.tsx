@@ -1,18 +1,23 @@
 import { useState } from 'react';
-import { Table, Booking } from '../App';
+import { Table, Booking, Staff } from '../App';
+import HeaderBar from './HeaderBar';
 import { Button } from './ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from './ui/card';
 import { Input } from './ui/input';
 import { Label } from './ui/label';
-import { Calendar as CalendarIcon, Clock, Users, ArrowLeft, CheckCircle, MapPin } from 'lucide-react';
+import { Calendar as CalendarIcon, Clock, Users, CheckCircle } from 'lucide-react';
 
 interface OnlineBookingScreenProps {
   tables: Table[];
   onBookingCreate: (booking: Omit<Booking, 'id' | 'createdAt'>) => void;
-  onBack: () => void;
+  onNavigateToTableMap?: () => void;
+  onNavigateToKitchen?: () => void;
+  onNavigateToManagement?: () => void;
+  onLogout?: () => void;
+  user?: Staff | null;
 }
 
-export default function OnlineBookingScreen({ tables, onBookingCreate, onBack }: OnlineBookingScreenProps) {
+export default function OnlineBookingScreen({ tables, onBookingCreate, onNavigateToTableMap, onNavigateToKitchen, onNavigateToManagement, onLogout, user }: OnlineBookingScreenProps) {
   const [step, setStep] = useState(1);
   const [formData, setFormData] = useState({
     customerName: '',
@@ -84,7 +89,7 @@ export default function OnlineBookingScreen({ tables, onBookingCreate, onBack }:
             <p><strong>Số khách:</strong> {formData.guests} người</p>
             <p><strong>Bàn số:</strong> {selectedTableId}</p>
           </div>
-          <Button onClick={onBack} className="w-full">Quay lại trang chủ</Button>
+          <p className="text-sm text-neutral-500">Sử dụng thanh header phía trên để quay về trang chính.</p>
         </Card>
       </div>
     );
@@ -100,11 +105,15 @@ export default function OnlineBookingScreen({ tables, onBookingCreate, onBack }:
         backgroundRepeat: 'no-repeat',
       }}
     >
+      <HeaderBar
+        user={user ?? null}
+        onNavigateToTableMap={onNavigateToTableMap}
+        onNavigateToKitchen={onNavigateToKitchen}
+        onNavigateToOnlineBooking={() => {}}
+        onNavigateToManagement={onNavigateToManagement}
+        onLogout={onLogout}
+      />
       <div className="max-w-2xl mx-auto py-8">
-        <Button variant="ghost" onClick={onBack} className="mb-4">
-          <ArrowLeft className="w-4 h-4 mr-2" /> Quay lại
-        </Button>
-        
         <Card>
           <CardHeader>
             <CardTitle>Đặt bàn trực tuyến</CardTitle>
