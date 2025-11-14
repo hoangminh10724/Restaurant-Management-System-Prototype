@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Button } from './ui/button';
 import { Input } from './ui/input';
 import { Label } from './ui/label';
@@ -16,24 +16,50 @@ interface GuestCountPopupProps {
   onClose: () => void;
   onConfirm: (guestCount: number) => void;
   tableName: string;
+  maxSeats?: number;
 }
 
-export default function GuestCountPopup({ isOpen, onClose, onConfirm, tableName }: GuestCountPopupProps) {
+export default function GuestCountPopup({ isOpen, onClose, onConfirm, tableName, maxSeats = 8 }: GuestCountPopupProps) {
   const [count, setCount] = useState(1);
+  const [error, setError] = useState('');
+
+  useEffect(() => {
+    if (isOpen) {
+      setCount(1); // Reset count when dialog opens
+      setError('');
+    }
+  }, [isOpen]);
 
   const handleConfirm = () => {
-    if (count > 0) {
+    if (count > 0 && count <= maxSeats) {
       onConfirm(count);
+    } else {
+      setError(`Số khách phải từ 1 đến ${maxSeats}.`);
+    }
+  };
+
+  const handleCountChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const newCount = parseInt(e.target.value);
+    if (newCount > maxSeats) {
+      setError(`Bàn này có tối đa ${maxSeats} ghế.`);
+      setCount(maxSeats);
+    } else if (newCount < 1) {
+      setError('Số khách phải lớn hơn 0.');
+      setCount(1);
+    }
+    else {
+      setCount(newCount || 1);
+      setError('');
     }
   };
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="sm:max-w-[425px]">
+      <DialogContent className="max-w-xs">
         <DialogHeader>
           <DialogTitle>Mở bàn {tableName}</DialogTitle>
           <DialogDescription>
-            Nhập số lượng khách để mở bàn mới.
+            Nhập số lượng khách để mở bàn mới. Bàn này có tối đa {maxSeats} ghế.
           </DialogDescription>
         </DialogHeader>
         <div className="grid gap-4 py-4">
@@ -45,12 +71,14 @@ export default function GuestCountPopup({ isOpen, onClose, onConfirm, tableName 
               id="guest-count"
               type="number"
               value={count}
-              onChange={(e) => setCount(Math.max(1, parseInt(e.target.value) || 1))}
-              className="col-span-3"
+              onChange={handleCountChange}
+              className={`col-span-3 ${error ? 'border-red-500' : ''}`}
               min="1"
+              max={maxSeats}
               autoFocus
             />
           </div>
+          {error && <p className="col-span-4 text-red-500 text-sm text-center">{error}</p>}
         </div>
         <DialogFooter>
           <Button type="button" variant="outline" onClick={onClose}>Hủy</Button>

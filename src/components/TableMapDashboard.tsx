@@ -8,6 +8,7 @@ import HeaderBar from './HeaderBar';
 import GuestCountPopup from './GuestCountPopup';
 import TableActionsPopup from './TableActionsPopup';
 import TransferTableDialog from './TransferTableDialog';
+import BookingInfoPopup from './BookingInfoPopup';
 
 interface TableMapDashboardProps {
   tables: Table[];
@@ -26,6 +27,7 @@ export default function TableMapDashboard({ tables, orders, onTableClick, onOpen
   const [isGuestPopupOpen, setGuestPopupOpen] = useState(false);
   const [isActionsPopupOpen, setActionsPopupOpen] = useState(false);
   const [isTransferDialogOpen, setTransferDialogOpen] = useState(false);
+  const [isBookingInfoOpen, setBookingInfoOpen] = useState(false);
   const [selectedTable, setSelectedTable] = useState<Table | null>(null);
   const [isSettingModalOpen, setSettingModalOpen] = useState(false);
   const [selectedFloor, setSelectedFloor] = useState<number>(1);
@@ -73,6 +75,8 @@ export default function TableMapDashboard({ tables, orders, onTableClick, onOpen
       setGuestPopupOpen(true);
     } else if (table.status === 'serving') {
       setActionsPopupOpen(true);
+    } else if (table.status === 'booked') {
+      setBookingInfoOpen(true);
     }
   };
 
@@ -93,6 +97,12 @@ export default function TableMapDashboard({ tables, orders, onTableClick, onOpen
   const handleOpenTransferDialog = () => {
     setActionsPopupOpen(false); // Close the small popup
     setTransferDialogOpen(true); // Open the main dialog
+  };
+
+  const handleConfirmBookingArrival = () => {
+    setBookingInfoOpen(false);
+    setGuestPopupOpen(true);
+    // The selectedTable is already set, so GuestCountPopup will use it
   };
 
   const handleConfirmTransfer = (sourceId: number, targetId: number) => {
@@ -262,7 +272,7 @@ export default function TableMapDashboard({ tables, orders, onTableClick, onOpen
                       position: 'relative', 
                       height: '180px',
                       perspective: '1000px',
-                      marginTop: rowNumber === 2 ? '20px' : '0' // push second row down to avoid overlap
+                      marginTop: rowNumber === 2 ? '80px' : '0' // push second row down to avoid overlap
                     }}
                     onMouseEnter={(e) => {
                       const inner = e.currentTarget.querySelector('[data-inner]') as HTMLElement;
@@ -449,6 +459,7 @@ export default function TableMapDashboard({ tables, orders, onTableClick, onOpen
             onClose={() => setGuestPopupOpen(false)}
             onConfirm={handleConfirmOpenTable}
             tableName={`Bàn ${selectedTable.id}`}
+            maxSeats={selectedTable.maxSeats}
           />
           <TableActionsPopup
             isOpen={isActionsPopupOpen}
@@ -464,6 +475,12 @@ export default function TableMapDashboard({ tables, orders, onTableClick, onOpen
             sourceTable={selectedTable}
             availableTables={tables.filter(t => t.status === 'empty')}
             onConfirm={handleConfirmTransfer}
+          />
+          <BookingInfoPopup
+            isOpen={isBookingInfoOpen}
+            onClose={() => setBookingInfoOpen(false)}
+            table={selectedTable}
+            onConfirmArrival={handleConfirmBookingArrival}
           />
         </>
       )}

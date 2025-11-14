@@ -53,7 +53,7 @@ export default function HeaderBar({ user, onNavigateToTableMap, onNavigateToKitc
             ⚙️
           </button>
 
-          {(user && (user.role === 'admin' || user.role === 'Admin' || user.role === 'Quản lý')) && onNavigateToManagement && (
+          {(user && (user.role === 'Admin' || user.role === 'Quản lý')) && onNavigateToManagement && (
             <button onClick={onNavigateToManagement} style={{ display: 'flex', alignItems: 'center', gap: '8px', color: 'white', padding: '8px 12px', borderRadius: '4px', backgroundColor: 'transparent', border: 'none', cursor: 'pointer', fontSize: '14px', fontWeight: '500' }} onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = '#1d4ed8')} onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = 'transparent')}>
               <UserCog size={20} />
               <span>Quản lý</span>
