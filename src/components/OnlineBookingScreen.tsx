@@ -4,8 +4,18 @@ import HeaderBar from './HeaderBar';
 import { Button } from './ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from './ui/card';
 import { Input } from './ui/input';
+import { Textarea } from './ui/textarea';
 import { Label } from './ui/label';
 import { Calendar as CalendarIcon, Clock, Users, CheckCircle } from 'lucide-react';
+import {
+  Dialog,
+  DialogContent,
+  DialogTitle,
+  DialogDescription,
+  DialogFooter,
+  DialogClose,
+  DialogTrigger,
+} from './ui/dialog';
 
 interface OnlineBookingScreenProps {
   tables: Table[];
@@ -25,9 +35,13 @@ export default function OnlineBookingScreen({ tables, onBookingCreate, onNavigat
     date: '',
     time: '',
     guests: 2,
+    eventType: '',
+    notes: ''
   });
   const [suggestedTables, setSuggestedTables] = useState<Table[]>([]);
   const [selectedTableId, setSelectedTableId] = useState<number | null>(null);
+  const [isTableDialogOpen, setIsTableDialogOpen] = useState(false);
+  const [pendingTableId, setPendingTableId] = useState<number | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [submitted, setSubmitted] = useState(false);
 
@@ -37,14 +51,30 @@ export default function OnlineBookingScreen({ tables, onBookingCreate, onNavigat
 
   const handleFindTables = () => {
     setError(null);
-    // Simple logic: suggest any empty table. A real app would check capacity and time slots.
-    const available = tables.filter(t => t.status === 'empty');
+    // Filter empty tables and sort by capacity to match guest count
+    const available = tables.filter(t => t.status === 'empty').sort((a, b) => (a.maxSeats || 4) - (b.maxSeats || 4));
     if (available.length === 0) {
       setError('Không còn bàn phù hợp vào thời điểm này. Vui lòng thử lại sau.');
     } else {
+      // Auto-select first table with capacity >= guests
+      const appropriateTable = available.find(t => (t.maxSeats || 4) >= formData.guests);
+      if (appropriateTable) {
+        setSelectedTableId(appropriateTable.id);
+      }
       setSuggestedTables(available);
       setStep(2);
     }
+  };
+
+  const openTableDialog = (tableId: number) => {
+    setPendingTableId(tableId);
+    setIsTableDialogOpen(true);
+  };
+
+  const confirmTableSelection = (tableId: number) => {
+    setSelectedTableId(tableId);
+    setIsTableDialogOpen(false);
+    setPendingTableId(null);
   };
 
   const handleSubmit = (e: React.FormEvent) => {
@@ -55,9 +85,15 @@ export default function OnlineBookingScreen({ tables, onBookingCreate, onNavigat
     }
     
     onBookingCreate({
-      ...formData,
+      customerName: formData.customerName,
+      customerPhone: formData.customerPhone,
+      date: formData.date,
+      time: formData.time,
+      guests: formData.guests,
       tableId: selectedTableId,
       status: 'confirmed', // Online bookings are auto-confirmed
+      notes: formData.notes,
+      setup: formData.eventType,
     });
     
     setSubmitted(true);
@@ -88,6 +124,8 @@ export default function OnlineBookingScreen({ tables, onBookingCreate, onNavigat
             <p><strong>Thời gian:</strong> {formData.time}, {formData.date}</p>
             <p><strong>Số khách:</strong> {formData.guests} người</p>
             <p><strong>Bàn số:</strong> {selectedTableId}</p>
+            {formData.eventType && <p><strong>Sự kiện:</strong> {formData.eventType}</p>}
+            {formData.notes && <p><strong>Ghi chú:</strong> {formData.notes}</p>}
           </div>
           <p className="text-sm text-neutral-500">Sử dụng thanh header phía trên để quay về trang chính.</p>
         </Card>
@@ -96,15 +134,7 @@ export default function OnlineBookingScreen({ tables, onBookingCreate, onNavigat
   }
 
   return (
-    <div
-      className="min-h-screen p-4"
-      style={{
-        backgroundImage: "url('/Background/service.jpg')",
-        backgroundSize: 'cover',
-        backgroundPosition: 'center',
-        backgroundRepeat: 'no-repeat',
-      }}
-    >
+    <div className="min-h-screen" style={{ display: 'flex', flexDirection: 'column' }}>
       <HeaderBar
         user={user ?? null}
         onNavigateToTableMap={onNavigateToTableMap}
@@ -113,7 +143,16 @@ export default function OnlineBookingScreen({ tables, onBookingCreate, onNavigat
         onNavigateToManagement={onNavigateToManagement}
         onLogout={onLogout}
       />
-      <div className="max-w-2xl mx-auto py-8">
+      <div
+        className="flex-1 overflow-auto p-4"
+        style={{
+          backgroundImage: "url('/Background/service.jpg')",
+          backgroundSize: 'cover',
+          backgroundPosition: 'center',
+          backgroundRepeat: 'no-repeat',
+        }}
+      >
+        <div className="max-w-2xl mx-auto py-8">
         <Card>
           <CardHeader>
             <CardTitle>Đặt bàn trực tuyến</CardTitle>
@@ -138,6 +177,21 @@ export default function OnlineBookingScreen({ tables, onBookingCreate, onNavigat
                     <Label htmlFor="guests">Số lượng khách *</Label>
                     <Input id="guests" type="number" min="1" max="20" value={formData.guests} onChange={(e) => handleInputChange('guests', parseInt(e.target.value))} required />
                   </div>
+
+                  <div className="space-y-2">
+                    <Label htmlFor="eventType">Sự kiện (tuỳ chọn)</Label>
+                    <select id="eventType" value={formData.eventType} onChange={(e) => handleInputChange('eventType', e.target.value)} className="w-full rounded-md border px-3 py-2">
+                      <option value="">(Không chọn)</option>
+                      <option value="Kỉ niệm">Kỉ niệm</option>
+                      <option value="Sinh nhật">Sinh nhật</option>
+                      <option value="Họp nhóm">Họp nhóm</option>
+                      <option value="Khác">Khác</option>
+                    </select>
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="notes">Ghi chú / Yêu cầu</Label>
+                    <Textarea id="notes" rows={4} maxLength={250} value={formData.notes} onChange={(e) => handleInputChange('notes', e.target.value)} placeholder="Ví dụ: Không ăn cay, bàn gần cửa sổ..." />
+                  </div>
                   {error && <p className="text-sm text-red-600">{error}</p>}
                   <Button type="button" onClick={handleFindTables} className="w-full" disabled={!formData.date || !formData.time || formData.guests <= 0}>
                     Tìm bàn phù hợp
@@ -152,7 +206,12 @@ export default function OnlineBookingScreen({ tables, onBookingCreate, onNavigat
                     <Label>Bàn trống gợi ý:</Label>
                     <div className="grid grid-cols-4 gap-2">
                       {suggestedTables.map(table => (
-                        <Button key={table.id} variant={selectedTableId === table.id ? 'default' : 'outline'} onClick={() => setSelectedTableId(table.id)}>
+                        <Button
+                          key={table.id}
+                          variant={selectedTableId === table.id ? 'default' : 'outline'}
+                          className={selectedTableId === table.id ? 'bg-yellow-300 text-black border-yellow-300 hover:bg-yellow-300' : ''}
+                          onClick={() => openTableDialog(table.id)}
+                        >
                           Bàn {table.id}
                         </Button>
                       ))}
@@ -166,7 +225,28 @@ export default function OnlineBookingScreen({ tables, onBookingCreate, onNavigat
                     <Label htmlFor="phone">Số điện thoại *</Label>
                     <Input id="phone" type="tel" value={formData.customerPhone} onChange={(e) => handleInputChange('customerPhone', e.target.value)} placeholder="Nhập số điện thoại" required />
                   </div>
+
+                  {/* Notes moved to Step 1 so it's visible earlier */}
+
                   {error && <p className="text-sm text-red-600">{error}</p>}
+                  <Dialog open={isTableDialogOpen} onOpenChange={(open: boolean) => setIsTableDialogOpen(open)}>
+                    <DialogContent>
+                      <DialogTitle>Chọn số bàn</DialogTitle>
+                      <DialogDescription>Chọn bàn bạn muốn đặt (bấm vào số để xác nhận).</DialogDescription>
+                      <div className="mt-4 grid grid-cols-4 gap-2">
+                        {suggestedTables.map(t => (
+                          <Button key={t.id} className={selectedTableId === t.id ? 'bg-yellow-300 text-black border-yellow-300' : ''} onClick={() => confirmTableSelection(t.id)}>
+                            Bàn {t.id}
+                          </Button>
+                        ))}
+                      </div>
+                      <DialogFooter>
+                        <DialogClose asChild>
+                          <Button variant="outline">Huỷ</Button>
+                        </DialogClose>
+                      </DialogFooter>
+                    </DialogContent>
+                  </Dialog>
                   <div className="flex gap-3">
                     <Button type="button" variant="outline" onClick={() => { setStep(1); setError(null); }} className="flex-1">Quay lại</Button>
                     <Button type="button" onClick={() => { if(selectedTableId && formData.customerName && formData.customerPhone) setStep(3); else setError("Vui lòng chọn bàn và điền đủ thông tin.") }} className="flex-1" disabled={!selectedTableId || !formData.customerName || !formData.customerPhone}>Tiếp tục</Button>
@@ -183,6 +263,8 @@ export default function OnlineBookingScreen({ tables, onBookingCreate, onNavigat
                     <p><strong>Thời gian:</strong> {formData.time}, {formData.date}</p>
                     <p><strong>Số khách:</strong> {formData.guests} người</p>
                     <p><strong>Bàn đã chọn:</strong> <span className="font-bold text-orange-600">Bàn {selectedTableId}</span></p>
+                    {formData.eventType && <p><strong>Sự kiện:</strong> {formData.eventType}</p>}
+                    {formData.notes && <p><strong>Ghi chú:</strong> {formData.notes}</p>}
                   </div>
                   <div className="flex gap-3">
                     <Button type="button" variant="outline" onClick={() => setStep(2)} className="flex-1">Quay lại</Button>
@@ -193,6 +275,7 @@ export default function OnlineBookingScreen({ tables, onBookingCreate, onNavigat
             </form>
           </CardContent>
         </Card>
+        </div>
       </div>
     </div>
   );
