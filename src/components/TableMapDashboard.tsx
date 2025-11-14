@@ -127,6 +127,7 @@ export default function TableMapDashboard({ tables, orders, onTableClick, onOpen
         onNavigateToOnlineBooking={onNavigateToOnlineBooking}
         onNavigateToManagement={onNavigateToManagement}
         onLogout={onLogout}
+        onToggleSettings={() => setSettingModalOpen(true)}
       />
 
       {/* Filter Section */}

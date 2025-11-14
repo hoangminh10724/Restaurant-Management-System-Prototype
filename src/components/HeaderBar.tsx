@@ -9,9 +9,10 @@ interface HeaderBarProps {
   onNavigateToOnlineBooking?: () => void;
   onNavigateToManagement?: () => void;
   onLogout?: () => void;
+  onToggleSettings?: () => void;
 }
 
-export default function HeaderBar({ user, onNavigateToTableMap, onNavigateToKitchen, onNavigateToOnlineBooking, onNavigateToManagement, onLogout }: HeaderBarProps) {
+export default function HeaderBar({ user, onNavigateToTableMap, onNavigateToKitchen, onNavigateToOnlineBooking, onNavigateToManagement, onLogout, onToggleSettings }: HeaderBarProps) {
   return (
     <div style={{ backgroundColor: '#2563eb', padding: '16px 24px', borderBottom: '1px solid #1e40af', boxShadow: '0 1px 3px rgba(0,0,0,0.1)' }}>
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '12px' }}>
@@ -46,6 +47,7 @@ export default function HeaderBar({ user, onNavigateToTableMap, onNavigateToKitc
           </button>
 
           <button
+            onClick={onToggleSettings}
             style={{ color: 'white', padding: '8px', backgroundColor: 'transparent', border: 'none', cursor: 'pointer', borderRadius: '4px', fontSize: '14px' }}
             onMouseEnter={(e) => (e.currentTarget.style.backgroundColor = '#1d4ed8')}
             onMouseLeave={(e) => (e.currentTarget.style.backgroundColor = 'transparent')}
