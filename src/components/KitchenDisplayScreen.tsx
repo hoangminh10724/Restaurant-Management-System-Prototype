@@ -55,16 +55,44 @@ export default function KitchenDisplayScreen({ orders, onStatusUpdate, onLogout,
     }
   };
 
+  // We'll render a left-aligned responsive grid and show only a specific set of tables
+  const focusTables = [2, 5, 10, 14, 20];
+
+  // Default menus for those tables when no active order exists
+  const defaultMenus: Record<number, { name: string; quantity: number; selectedModifier?: string; notes?: string }[]> = {
+    2: [
+      { name: 'Phở Bò', quantity: 2 },
+      { name: 'Trà đá', quantity: 2 }
+    ],
+    5: [
+      { name: 'Cơm sườn', quantity: 3 },
+      { name: 'Nước ngọt', quantity: 3 }
+    ],
+    10: [
+      { name: 'Bún chả', quantity: 4 },
+      { name: 'Bia', quantity: 4 }
+    ],
+    14: [
+      { name: 'Gỏi cuốn', quantity: 2 },
+      { name: 'Nước chanh', quantity: 2 }
+    ],
+    20: [
+      { name: 'Lẩu hải sản', quantity: 1, notes: 'Không cay' },
+      { name: 'Cơm trắng', quantity: 4 }
+    ]
+  };
+
+  // Build items to render for each focus table (prefer live order if exists)
+  const tableCards = focusTables.map((tableId) => {
+    const order = orders.find(o => o.tableId === tableId && o.status !== 'completed');
+    const items = order ? order.items : (defaultMenus[tableId] ?? []);
+    const status = order ? order.status : ('pending' as Order['status']);
+    const timestamp = order ? order.timestamp : '';
+    return { tableId, items, status, timestamp };
+  });
+
   return (
-    <div
-      className="min-h-screen"
-      style={{
-        backgroundImage: "url('/Background/chung.jpg')",
-        backgroundSize: 'cover',
-        backgroundPosition: 'center',
-        backgroundRepeat: 'no-repeat',
-      }}
-    >
+    <div className="min-h-screen">
       <HeaderBar
         user={user ?? null}
         onNavigateToTableMap={onNavigateToTableMap}
@@ -74,90 +102,55 @@ export default function KitchenDisplayScreen({ orders, onStatusUpdate, onLogout,
         onLogout={onLogout}
       />
 
-      {/* Orders Grid */}
-      <div className="max-w-7xl mx-auto px-6 py-6">
-        {orders.filter(o => o.status !== 'completed').length === 0 ? (
-          <Card className="p-12 text-center">
-            <p className="text-neutral-500">Không có order nào đang hoạt động</p>
-          </Card>
-        ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-            {orders.filter(o => o.status !== 'completed').map((order) => {
-              const orderStatus = getOrderStatusInfo(order.status);
-              return (
-              <Card
-                key={order.tableId}
-                className={`${getStatusColor(order.status)} border-2 p-4`}
-              >
-                <div className="flex items-start justify-between mb-4">
+      <div style={{ padding: 24 }}>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(320px, 1fr))', gap: 16, justifyContent: 'start', alignItems: 'start' }}>
+          {tableCards.map(({ tableId, items, status, timestamp }) => {
+            const orderStatus = getOrderStatusInfo(status);
+            return (
+              <Card key={tableId} className={`${getStatusColor(status)} border-2 p-4`}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 12 }}>
                   <div>
-                    <h2>Bàn {order.tableId}</h2>
-                    <div className="flex items-center gap-2 text-neutral-600 mt-1">
-                      <Clock className="w-4 h-4" />
-                      <span>{order.timestamp}</span>
-                    </div>
+                    <h2>Bàn {tableId}</h2>
+                    {timestamp && (
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 8, color: '#6b7280', marginTop: 6 }}>
+                        <Clock className="w-4 h-4" />
+                        <span style={{ fontSize: 12 }}>{timestamp}</span>
+                      </div>
+                    )}
                   </div>
-                  <Badge variant={orderStatus.variant}>
-                    {orderStatus.text}
-                  </Badge>
+                  <Badge variant={orderStatus.variant}>{orderStatus.text}</Badge>
                 </div>
 
-                <div className="space-y-2 mb-4">
-                  {order.items.map((item, index) => (
-                    <div key={index} className="bg-white rounded p-3">
-                      <div className="flex items-start justify-between">
-                        <div className="flex-1">
-                          <div className="flex items-center gap-2">
-                            <span className="inline-flex items-center justify-center w-6 h-6 rounded-full bg-neutral-900 text-white text-xs">
-                              {item.quantity}
-                            </span>
-                            <span className="font-semibold">{item.name}</span>
-                          </div>
-                          {item.selectedModifier && (
-                            <span className="text-neutral-600 ml-8 mt-1 block">
-                              {item.selectedModifier}
-                            </span>
-                          )}
-                           {item.notes && (
-                            <p className="text-sm text-orange-600 ml-8 mt-1 fst-italic">
-                              Ghi chú: {item.notes}
-                            </p>
-                          )}
+                <div style={{ display: 'flex', flexDirection: 'column', gap: 8, marginBottom: 12 }}>
+                  {items.map((item: any, index: number) => (
+                    <div key={index} style={{ background: 'white', borderRadius: 6, padding: 10 }}>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                          <div style={{ width: 26, height: 26, borderRadius: 999, background: '#0f172a', color: 'white', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 12 }}>{item.quantity}</div>
+                          <div style={{ fontWeight: 600 }}>{item.name}</div>
                         </div>
+                        {item.selectedModifier && <div style={{ color: '#6b7280', fontSize: 12 }}>{item.selectedModifier}</div>}
                       </div>
+                      {item.notes && <div style={{ color: '#ea580c', fontSize: 12, marginTop: 6 }}>Ghi chú: {item.notes}</div>}
                     </div>
                   ))}
                 </div>
 
-                <div className="grid grid-cols-2 gap-2">
-                  {order.status === 'pending' && (
-                    <Button
-                      className="col-span-2"
-                      onClick={() => onStatusUpdate(order.tableId, 'cooking')}
-                    >
-                      Bắt đầu làm
-                    </Button>
+                <div style={{ display: 'flex', gap: 8 }}>
+                  {status === 'pending' && (
+                    <Button style={{ flex: 1 }} onClick={() => onStatusUpdate(tableId, 'cooking')}>Bắt đầu làm</Button>
                   )}
-                  {order.status === 'cooking' && (
-                    <Button
-                      className="col-span-2"
-                      variant="secondary"
-                      onClick={() => onStatusUpdate(order.tableId, 'ready')}
-                    >
-                      Báo đã xong
-                    </Button>
+                  {status === 'cooking' && (
+                    <Button style={{ flex: 1 }} variant="secondary" onClick={() => onStatusUpdate(tableId, 'ready')}>Báo đã xong</Button>
                   )}
-                  {order.status === 'ready' && (
-                    <div className="col-span-2 text-center py-2 bg-green-500 text-white rounded">
-                      Sẵn sàng
-                    </div>
+                  {status === 'ready' && (
+                    <div style={{ flex: 1, textAlign: 'center', paddingTop: 8, paddingBottom: 8, backgroundColor: '#16a34a', color: 'white', borderRadius: 6 }}>Sẵn sàng</div>
                   )}
                 </div>
               </Card>
             );
           })}
-          </div>
-        )}
+        </div>
       </div>
     </div>
   );
